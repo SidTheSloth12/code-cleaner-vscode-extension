@@ -15,7 +15,7 @@
   "commands": [
     {
       "command": "code-cleaner.run",
-      "title": "Clean Code Engine..."
+      "title": "Clean Code Engine"
     }
   ],
   "menus": {
