@@ -135,38 +135,48 @@ export function detectLang(code: string): string {
 }
 
 function stripComments(code: string, lang: string): string {
+    // 🧠 Core Engine: Matches strings (Group 1) OR comments. 
+    // If it's a string, it skips it. If it's a comment, it removes it.
+    const safeReplace = (text: string, commentRegex: string, quotes: string[]) => {
+        // Dynamically build syntax-safe string matchers based on the language's quote types
+        const stringPatterns = quotes.map(q => `${q}(?:[^${q}\\\\]|\\\\.)*${q}`).join('|');
+        const combinedRegex = new RegExp(`(${stringPatterns})|${commentRegex}`, 'g');
+        
+        return text.replace(combinedRegex, (match, isString) => isString ? match : '');
+    };
+
     if (lang === 'sh') {
         return code.split('\n').map((l, i) => {
             if (i === 0 && l.startsWith('#!')) return l;
-            return l.replace(new RegExp('#[^\\n]*', 'g'), '');
+            return safeReplace(l, '#[^\\n]*', ['"', "'"]);
         }).join('\n');
     }
     if (['python', 'ruby', 'yaml'].includes(lang)) {
-        return code.replace(new RegExp("(?<!['\"#])#[^\\n]*", "g"), '');
+        return safeReplace(code, '#[^\\n]*', ['"', "'"]);
     }
     if (lang === 'html') {
+        // HTML comment syntax rarely collides with string contents
         return code.replace(new RegExp('', 'g'), '');
     }
     if (lang === 'css') {
-        return code.replace(new RegExp('\\/\\*[\\s\\S]*?\\*\\/', 'g'), '');
+        return safeReplace(code, '\\/\\*[\\s\\S]*?\\*\\/', ['"', "'"]);
     }
     if (lang === 'lua') {
-        return code.replace(new RegExp('--\\[\\[[\\s\\S]*?\\]\\]', 'g'), '').replace(new RegExp('--[^\\n]*', 'g'), '');
+        return safeReplace(code, '--\\[\\[[\\s\\S]*?\\]\\]|--[^\\n]*', ['"', "'"]);
     }
     if (lang === 'php') {
-        return code
-            .replace(new RegExp('\\/\\/[^\\n]*', 'g'), '')
-            .replace(new RegExp('\\/\\*[\\s\\S]*?\\*\\/', 'g'), '')
-            .replace(new RegExp('#[^\\n]*', 'g'), '');
+        return safeReplace(code, '\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/|#[^\\n]*', ['"', "'", '`']);
     }
     if (lang === 'sql') {
-        return code.replace(new RegExp('--[^\\n]*', 'g'), '').replace(new RegExp('\\/\\*[\\s\\S]*?\\*\\/', 'g'), '');
+        return safeReplace(code, '--[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/', ["'"]);
     }
     if (lang === 'json') {
         return code;
     }
+    
     // Default: C-style — JS, TS, Java, Kotlin, C, C++, Rust, Go, Swift, Dart, Scala
-    return code.replace(new RegExp('\\/\\/[^\\n]*', 'g'), '').replace(new RegExp('\\/\\*[\\s\\S]*?\\*\\/', 'g'), '');
+    // Protects double quotes, single quotes, and backticks (template literals)
+    return safeReplace(code, '\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/', ['"', "'", '`']);
 }
 
 function fixOps(line: string, lang: string): string {
