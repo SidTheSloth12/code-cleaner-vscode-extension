@@ -10,7 +10,7 @@
     "Other"
   ],
   "activationEvents": [],
-"main": "./out/extension.js",
+  "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
@@ -19,7 +19,7 @@
       },
       {
         "command": "code-cleaner.cleanFolder",
-        "title": "Clean Folder..."
+        "title": "Clean Folder"
       }
     ],
     "menus": {
