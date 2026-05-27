@@ -232,3 +232,31 @@ export function cleanCode(code: string, level: CleanLevel, lang: string, removeE
     if (level.collapseAll) { result = result.replace(/\s+/g, ' ').trim(); }
     return result;
 }
+
+export function getLangFromFilename(filename: string): string | null {
+    const ext = filename.split('.').pop()?.toLowerCase();
+    if (!ext) return null;
+    const extMap: { [key: string]: string } = {
+        'js': 'js', 'jsx': 'js', 'mjs': 'js', 'cjs': 'js',
+        'ts': 'ts', 'tsx': 'ts', 'mts': 'ts', 'cts': 'ts',
+        'py': 'python', 'pyw': 'python',
+        'css': 'css',
+        'html': 'html', 'htm': 'html',
+        'java': 'java',
+        'kt': 'kotlin', 'ktm': 'kotlin', 'kts': 'kotlin',
+        'c': 'c', 'cpp': 'c', 'cc': 'c', 'cxx': 'c', 'h': 'c', 'hpp': 'c',
+        'rs': 'rust',
+        'go': 'go',
+        'rb': 'ruby',
+        'php': 'php',
+        'swift': 'swift',
+        'sh': 'sh', 'bash': 'sh', 'zsh': 'sh',
+        'sql': 'sql',
+        'yaml': 'yaml', 'yml': 'yaml',
+        'json': 'json', 'jsonc': 'json',
+        'lua': 'lua',
+        'dart': 'dart',
+        'scala': 'scala', 'sc': 'scala'
+    };
+    return extMap[ext] || null;
+}

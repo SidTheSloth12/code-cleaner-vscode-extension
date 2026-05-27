@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import { cleanCode, LEVELS } from '../cleaner';
+import { cleanCode, LEVELS, getLangFromFilename } from '../cleaner';
 
 suite('Code Cleaner Core Test Suite', () => {
     
@@ -65,5 +65,60 @@ def hello():
         assert.ok(!cleaned.includes('// compiler configuration'), 'Should strip line comment');
         assert.ok(!cleaned.includes('/* target js version */'), 'Should strip block comment');
         assert.ok(cleaned.includes('"target": "es2022"'), 'Should preserve valid JSON content');
+    });
+});
+
+suite('getLangFromFilename Test Suite', () => {
+
+    test('Maps common JS/TS extensions', () => {
+        assert.strictEqual(getLangFromFilename('app.js'), 'js');
+        assert.strictEqual(getLangFromFilename('app.jsx'), 'js');
+        assert.strictEqual(getLangFromFilename('app.mjs'), 'js');
+        assert.strictEqual(getLangFromFilename('index.ts'), 'ts');
+        assert.strictEqual(getLangFromFilename('component.tsx'), 'ts');
+    });
+
+    test('Maps Python extensions', () => {
+        assert.strictEqual(getLangFromFilename('main.py'), 'python');
+        assert.strictEqual(getLangFromFilename('script.pyw'), 'python');
+    });
+
+    test('Maps C/C++ extensions', () => {
+        assert.strictEqual(getLangFromFilename('main.c'), 'c');
+        assert.strictEqual(getLangFromFilename('utils.cpp'), 'c');
+        assert.strictEqual(getLangFromFilename('header.h'), 'c');
+        assert.strictEqual(getLangFromFilename('header.hpp'), 'c');
+    });
+
+    test('Maps web extensions', () => {
+        assert.strictEqual(getLangFromFilename('style.css'), 'css');
+        assert.strictEqual(getLangFromFilename('index.html'), 'html');
+        assert.strictEqual(getLangFromFilename('page.htm'), 'html');
+    });
+
+    test('Maps other supported languages', () => {
+        assert.strictEqual(getLangFromFilename('Main.java'), 'java');
+        assert.strictEqual(getLangFromFilename('main.rs'), 'rust');
+        assert.strictEqual(getLangFromFilename('main.go'), 'go');
+        assert.strictEqual(getLangFromFilename('app.rb'), 'ruby');
+        assert.strictEqual(getLangFromFilename('index.php'), 'php');
+        assert.strictEqual(getLangFromFilename('App.swift'), 'swift');
+        assert.strictEqual(getLangFromFilename('deploy.sh'), 'sh');
+        assert.strictEqual(getLangFromFilename('query.sql'), 'sql');
+        assert.strictEqual(getLangFromFilename('config.yaml'), 'yaml');
+        assert.strictEqual(getLangFromFilename('config.yml'), 'yaml');
+        assert.strictEqual(getLangFromFilename('data.json'), 'json');
+        assert.strictEqual(getLangFromFilename('script.lua'), 'lua');
+        assert.strictEqual(getLangFromFilename('main.dart'), 'dart');
+        assert.strictEqual(getLangFromFilename('Main.scala'), 'scala');
+        assert.strictEqual(getLangFromFilename('App.kt'), 'kotlin');
+    });
+
+    test('Returns null for unsupported extensions', () => {
+        assert.strictEqual(getLangFromFilename('image.png'), null);
+        assert.strictEqual(getLangFromFilename('data.csv'), null);
+        assert.strictEqual(getLangFromFilename('README.md'), null);
+        assert.strictEqual(getLangFromFilename('binary.exe'), null);
+        assert.strictEqual(getLangFromFilename('noext'), null);
     });
 });

@@ -16,6 +16,10 @@
       {
         "command": "code-cleaner.run",
         "title": "Clean Code Engine"
+      },
+      {
+        "command": "code-cleaner.cleanFolder",
+        "title": "Clean Folder..."
       }
     ],
     "menus": {
@@ -23,6 +27,13 @@
         {
           "command": "code-cleaner.run",
           "group": "modification"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "code-cleaner.cleanFolder",
+          "group": "modification",
+          "when": "explorerResourceIsFolder"
         }
       ]
     },
