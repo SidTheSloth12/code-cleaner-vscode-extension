@@ -11,22 +11,32 @@
   ],
   "activationEvents": [],
 "main": "./out/extension.js",
-"contributes": {
-  "commands": [
-    {
-      "command": "code-cleaner.run",
-      "title": "Clean Code Engine"
-    }
-  ],
-  "menus": {
-    "editor/context": [
+  "contributes": {
+    "commands": [
       {
         "command": "code-cleaner.run",
-        "group": "modification"
+        "title": "Clean Code Engine"
       }
-    ]
-  }
-},
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "code-cleaner.run",
+          "group": "modification"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Code Cleaner",
+      "properties": {
+        "code-cleaner.removeEmojis": {
+          "type": "boolean",
+          "default": true,
+          "description": "Remove emojis when cleaning code."
+        }
+      }
+    }
+  },
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",

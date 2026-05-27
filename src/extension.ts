@@ -1,5 +1,3 @@
-// src/extension.ts
-
 import * as vscode from 'vscode';
 import { LEVELS, mapVsCodeLang, detectLang, getWarning, cleanCode } from './cleaner';
 
@@ -11,8 +9,13 @@ export function activate(context: vscode.ExtensionContext) {
             return;
         }
 
+        const config = vscode.workspace.getConfiguration('code-cleaner');
+        const removeEmojis = config.get<boolean>('removeEmojis', true);
+
         const document = editor.document;
-        const originalText = document.getText();
+        const editorSelection = editor.selection;
+        const hasSelection = !editorSelection.isEmpty;
+        const originalText = hasSelection ? document.getText(editorSelection) : document.getText();
         
         // Map VS Code context, but fallback to your intelligent scoring algorithm if it's plaintext
         let mappedLang = mapVsCodeLang(document.languageId);
@@ -27,7 +30,7 @@ export function activate(context: vscode.ExtensionContext) {
         }));
 
         const selection = await vscode.window.showQuickPick(items, {
-            placeHolder: `Select cleaning depth for this detected ${mappedLang.toUpperCase()} file:`
+            placeHolder: `Select cleaning depth for this detected ${mappedLang.toUpperCase()} ${hasSelection ? 'selection' : 'file'}:`
         });
 
         if (!selection) { return; }
@@ -39,20 +42,25 @@ export function activate(context: vscode.ExtensionContext) {
             if (proceed !== 'Clean Anyway') { return; }
         }
 
-        const cleanedText = cleanCode(originalText, chosenLevel, mappedLang);
+        const cleanedText = cleanCode(originalText, chosenLevel, mappedLang, removeEmojis);
 
         await editor.edit(editBuilder => {
-            const firstLine = document.lineAt(0);
-            const lastLine = document.lineAt(document.lineCount - 1);
-            const fullRange = new vscode.Range(firstLine.range.start, lastLine.range.end);
-            editBuilder.replace(fullRange, cleanedText);
+            if (hasSelection) {
+                editBuilder.replace(editorSelection, cleanedText);
+            } else {
+                const firstLine = document.lineAt(0);
+                const lastLine = document.lineAt(document.lineCount - 1);
+                const fullRange = new vscode.Range(firstLine.range.start, lastLine.range.end);
+                editBuilder.replace(fullRange, cleanedText);
+            }
         });
 
         const originalChars = originalText.length;
         const cleanedChars = cleanedText.length;
         const savedPct = originalChars > 0 ? Math.round((1 - cleanedChars / originalChars) * 100) : 0;
+        const scope = hasSelection ? 'Selection' : 'File';
 
-        vscode.window.showInformationMessage(`✨ Cleaned using ${selection.label}! File size is now ↓ ${savedPct}% smaller.`);
+        vscode.window.showInformationMessage(`✨ Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label}! ${scope} size is now ↓ ${savedPct}% smaller.`);
     });
 
     context.subscriptions.push(disposable);

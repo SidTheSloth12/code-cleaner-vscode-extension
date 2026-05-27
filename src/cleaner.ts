@@ -8,28 +8,29 @@ export interface CleanLevel {
     removeBlankLines: boolean;
     fixOperators: boolean;
     collapseAll: boolean;
+    removeEmojis: boolean;
 }
 
 export const LEVELS: CleanLevel[] = [
     {
         name: "readable",
         desc: "Removes blank lines and normalises operator spacing while keeping comments and indentation intact.",
-        removeComments: false, removeIndent: false, removeBlankLines: true, fixOperators: true, collapseAll: false
+        removeComments: false, removeIndent: false, removeBlankLines: true, fixOperators: true, collapseAll: false, removeEmojis: true
     },
     {
         name: "compact",
         desc: "Strips comments and blank lines, normalises spacing and preserves indentation.",
-        removeComments: true, removeIndent: false, removeBlankLines: true, fixOperators: true, collapseAll: false
+        removeComments: true, removeIndent: false, removeBlankLines: true, fixOperators: true, collapseAll: false, removeEmojis: true
     },
     {
         name: "minified",
         desc: "Removes comments, blank lines and indentation entirely while retaining minimal whitespace.",
-        removeComments: true, removeIndent: true, removeBlankLines: true, fixOperators: true, collapseAll: false
+        removeComments: true, removeIndent: true, removeBlankLines: true, fixOperators: true, collapseAll: false, removeEmojis: true
     },
     {
         name: "nuclear",
         desc: "Smallest possible code, with no comments, blank lines, indentation or unnecessary whitespace.",
-        removeComments: true, removeIndent: true, removeBlankLines: true, fixOperators: true, collapseAll: true
+        removeComments: true, removeIndent: true, removeBlankLines: true, fixOperators: true, collapseAll: true, removeEmojis: true
     }
 ];
 
@@ -139,7 +140,14 @@ function stripComments(code: string, lang: string): string {
     // If it's a string, it skips it. If it's a comment, it removes it.
     const safeReplace = (text: string, commentRegex: string, quotes: string[]) => {
         // Dynamically build syntax-safe string matchers based on the language's quote types
-        const stringPatterns = quotes.map(q => `${q}(?:[^${q}\\\\]|\\\\.)*${q}`).join('|');
+        const stringPatterns = quotes.map(q => {
+            const eq = q.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+            if (q.length > 1) {
+                return `${eq}(?:(?!${eq})[\\s\\S])*${eq}`;
+            } else {
+                return `${eq}(?:[^${eq}\\\\]|\\\\.)*${eq}`;
+            }
+        }).join('|');
         const combinedRegex = new RegExp(`(${stringPatterns})|${commentRegex}`, 'g');
         
         return text.replace(combinedRegex, (match, isString) => isString ? match : '');
@@ -151,12 +159,15 @@ function stripComments(code: string, lang: string): string {
             return safeReplace(l, '#[^\\n]*', ['"', "'"]);
         }).join('\n');
     }
-    if (['python', 'ruby', 'yaml'].includes(lang)) {
+    if (lang === 'python') {
+        return safeReplace(code, '#[^\\n]*', ['"""', "'''", '"', "'"]);
+    }
+    if (['ruby', 'yaml'].includes(lang)) {
         return safeReplace(code, '#[^\\n]*', ['"', "'"]);
     }
     if (lang === 'html') {
         // HTML comment syntax rarely collides with string contents
-        return code.replace(new RegExp('', 'g'), '');
+        return code.replace(/<!--[\s\S]*?-->/g, '');
     }
     if (lang === 'css') {
         return safeReplace(code, '\\/\\*[\\s\\S]*?\\*\\/', ['"', "'"]);
@@ -171,7 +182,7 @@ function stripComments(code: string, lang: string): string {
         return safeReplace(code, '--[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/', ["'"]);
     }
     if (lang === 'json') {
-        return code;
+        return safeReplace(code, '\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/', ['"', "'"]);
     }
     
     // Default: C-style — JS, TS, Java, Kotlin, C, C++, Rust, Go, Swift, Dart, Scala
@@ -204,8 +215,12 @@ export function getWarning(lang: string, level: CleanLevel): string | null {
     return null;
 }
 
-export function cleanCode(code: string, level: CleanLevel, lang: string): string {
+export function cleanCode(code: string, level: CleanLevel, lang: string, removeEmojisOverride?: boolean): string {
     let result = code;
+    const removeEmojis = removeEmojisOverride ?? level.removeEmojis;
+    if (removeEmojis) {
+        result = result.replace(/(?![©®™])[\p{Extended_Pictographic}\u{1F3FB}-\u{1F3FF}\u{1F1E6}-\u{1F1FF}\u{200d}\u{fe0f}]/gu, '');
+    }
     if (level.removeComments) { result = stripComments(result, lang); }
     
     let lines = result.split('\n');
