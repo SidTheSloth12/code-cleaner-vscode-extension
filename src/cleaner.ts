@@ -157,24 +157,63 @@ function stripComments(code: string, lang: string): string {
  // Protects double quotes, single quotes, and backticks (template literals)
  return safeReplace(code, '\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/', ['"', "'", '`']);
 }
+function safeFix(line: string, lang: string, fixFn: (text: string) => string): string {
+ let quotes: string[] = ['"', "'"];
+ let commentPattern: string | null = null;
+ 
+ if (lang === 'python') {
+  quotes = ['"""', "'''", '"', "'"];
+  commentPattern = '#[^\\n]*';
+ } else if (lang === 'js' || lang === 'ts' || lang === 'php') {
+  quotes = ['"', "'", '`'];
+  commentPattern = '\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/';
+ } else if (lang === 'sh' || lang === 'ruby' || lang === 'yaml') {
+  commentPattern = '#[^\\n]*';
+ } else {
+  commentPattern = '\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/';
+ }
+ 
+ const stringPatterns = quotes.map(q => {
+  const eq = q.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+  if (q.length > 1) {
+   return `${eq}(?:(?!${eq})[\\s\\S])*${eq}`;
+  } else {
+   return `${eq}(?:[^${eq}\\\\]|\\\\.)*${eq}`;
+  }
+ }).join('|');
+ 
+ const pattern = `(${stringPatterns}${commentPattern ? '|' + commentPattern : ''})`;
+ const regex = new RegExp(pattern, 'g');
+ const parts = line.split(regex);
+ 
+ for (let i = 0; i < parts.length; i += 2) {
+  if (parts[i]) {
+   parts[i] = fixFn(parts[i]);
+  }
+ }
+ return parts.join('');
+}
 function fixOps(line: string, lang: string): string {
  if (NO_OP_FIX.has(lang)) return line;
  const match = line.match(/^(\s*)(.*)$/);
  if (!match) return line;
  const indent = match[1];
- let content = match[2];
- if (lang === 'python') {
-  content = content.replace(/, ([^\s\n])/g, ', $1').replace(/[ \t]+/g, ' ');
- } else if (['ruby', 'rust', 'go', 'swift', 'kotlin', 'scala', 'dart', 'c', 'php'].includes(lang)) {
-  content = content.replace(/, ([^\s])/g, ', $1').replace(/[ \t]+/g, ' ');
- } else if (lang === 'java') {
-  content = content.replace(/([^ = !<>\-]) = ([^>=])/g, '$1 = $2').replace(/, ([^\s])/g, ', $1').replace(/[ \t]+/g, ' ');
- } else if (lang === 'js' || lang === 'ts') {
-  content = content.replace(/([^ = !<>]) = ([^>=])/g, '$1 = $2').replace(/, ([^\s\n])/g, ', $1').replace(/[ \t]+/g, ' ');
- } else {
-  content = content.replace(/, ([^\s])/g, ', $1').replace(/[ \t]+/g, ' ');
- }
- return indent + content;
+ const content = match[2];
+ 
+ const fixedContent = safeFix(content, lang, (text) => {
+  if (lang === 'python') {
+   return text.replace(/, ([^\s\n])/g, ', $1').replace(/[ \t]+/g, ' ');
+  } else if (['ruby', 'rust', 'go', 'swift', 'kotlin', 'scala', 'dart', 'c', 'php'].includes(lang)) {
+   return text.replace(/, ([^\s])/g, ', $1').replace(/[ \t]+/g, ' ');
+  } else if (lang === 'java') {
+   return text.replace(/([^ = !<>\-]) = ([^>=])/g, '$1 = $2').replace(/, ([^\s])/g, ', $1').replace(/[ \t]+/g, ' ');
+  } else if (lang === 'js' || lang === 'ts') {
+   return text.replace(/([^ = !<>]) = ([^>=])/g, '$1 = $2').replace(/, ([^\s\n])/g, ', $1').replace(/[ \t]+/g, ' ');
+  } else {
+   return text.replace(/, ([^\s])/g, ', $1').replace(/[ \t]+/g, ' ');
+  }
+ });
+ return indent + fixedContent;
 }
 export function getWarning(lang: string, level: CleanLevel): string | null {
  if (INDENT_SENSITIVE.has(lang) && (level.removeIndent || level.collapseAll)) {
@@ -193,11 +232,16 @@ export function cleanCode(code: string, level: CleanLevel, lang: string, removeE
  }
  if (level.removeComments) { result = stripComments(result, lang); }
  let lines = result.split('\n');
- lines = lines.map(l => (level.removeIndent ? l.trimStart() : l).trimEnd());
+ 
+ const shouldRemoveIndent = level.removeIndent && !INDENT_SENSITIVE.has(lang);
+ lines = lines.map(l => (shouldRemoveIndent ? l.trimStart() : l).trimEnd());
+ 
  if (level.removeBlankLines) { lines = lines.filter(l => l.trim() !== ''); }
  if (level.fixOperators) { lines = lines.map(l => fixOps(l, lang)); }
- result = lines.join(level.collapseAll ? ' ' : '\n');
- if (level.collapseAll) { result = result.replace(/\s+/g, ' ').trim(); }
+ 
+ const shouldCollapse = level.collapseAll && !NEWLINE_SENSITIVE.has(lang);
+ result = lines.join(shouldCollapse ? ' ' : '\n');
+ if (shouldCollapse) { result = result.replace(/\s+/g, ' ').trim(); }
  return result;
 }
 export function getLangFromFilename(filename: string): string | null {
