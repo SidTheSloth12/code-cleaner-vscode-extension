@@ -13,7 +13,7 @@ export function activate(context: vscode.ExtensionContext) {
  const editorSelection = editor.selection;
  const hasSelection = !editorSelection.isEmpty;
  const originalText = hasSelection ? document.getText(editorSelection) : document.getText();
- let mappedLang = mapVsCodeLang(document.languageId);
+ let mappedLang = getLangFromFilename(document.fileName) || mapVsCodeLang(document.languageId);
  if (mappedLang === 'text') {
  mappedLang = detectLang(originalText);
  }

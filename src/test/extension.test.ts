@@ -1,108 +1,39 @@
-import * as assert from 'assert';
-import { cleanCode, LEVELS, getLangFromFilename } from '../cleaner';
-suite('Code Cleaner Core Test Suite', () => {
- test('Emoji removal across languages', () => {
- const jsCode = `const x = "hello world"; // some comment `;
- const compactLevel = LEVELS.find(l => l.name === 'compact')!;
- const cleaned = cleanCode(jsCode, compactLevel, 'js');
- assert.ok(!cleaned.includes(''), 'Should remove emoji ');
- assert.ok(!cleaned.includes(''), 'Should remove emoji ');
- assert.ok(!cleaned.includes('//'), 'Should strip comment');
- assert.strictEqual(cleaned.trim(), 'const x = "hello world";');
- });
- test('Emoji removal configuration override', () => {
- const jsCode = `const x = "hello world";`;
- const compactLevel = LEVELS.find(l => l.name === 'compact')!;
- const cleaned = cleanCode(jsCode, compactLevel, 'js', false);
- assert.ok(cleaned.includes(''), 'Should preserve emoji when override is false');
- });
- test('Python comment stripping and triple quotes', () => {
- const pyCode = `
+import * as assert from 'assert'; import { cleanCode, LEVELS, getLangFromFilename } from '../cleaner'; suite('Code Cleaner Core Test Suite', () => {
+    test('Emoji removal across languages', () => { const jsCode = `const x = "hello world"; // some comment `; const compactLevel = LEVELS.find(l => l.name === 'compact')!; const cleaned = cleanCode(jsCode, compactLevel, 'js'); assert.ok(!cleaned.includes(''), 'Should remove emoji '); assert.ok(!cleaned.includes(''), 'Should remove emoji '); assert.ok(!cleaned.includes('//'), 'Should strip comment'); assert.strictEqual(cleaned.trim(), 'const x = "hello world";'); }); test('Emoji removal configuration override', () => { const jsCode = `const x = "hello world";`; const compactLevel = LEVELS.find(l => l.name === 'compact')!; const cleaned = cleanCode(jsCode, compactLevel, 'js', false); assert.ok(cleaned.includes(''), 'Should preserve emoji when override is false'); }); test('Python comment stripping and triple quotes', () => {
+        const pyCode = `
 def hello():
  """This is a docstring with # comments inside it"""
  # This is a real comment
  print("hello") # inline comment
-`.trim();
- const compactLevel = LEVELS.find(l => l.name === 'compact')!;
- const cleaned = cleanCode(pyCode, compactLevel, 'python');
- assert.ok(cleaned.includes('"""This is a docstring with # comments inside it"""'), 'Should preserve triple-quoted string even with comment symbol');
- assert.ok(!cleaned.includes('# This is a real comment'), 'Should strip real comments');
- assert.ok(!cleaned.includes('# inline comment'), 'Should strip inline comments');
- assert.ok(cleaned.includes('print("hello")'), 'Should preserve code');
- });
- test('HTML comment stripping', () => {
- const htmlCode = `
-<!-- This is a comment -->
+`.trim(); const compactLevel = LEVELS.find(l => l.name === 'compact')!; const cleaned = cleanCode(pyCode, compactLevel, 'python'); assert.ok(cleaned.includes('"""This is a docstring with # comments inside it"""'), 'Should preserve triple-quoted string even with comment symbol'); assert.ok(!cleaned.includes('# This is a real comment'), 'Should strip real comments'); assert.ok(!cleaned.includes('# inline comment'), 'Should strip inline comments'); assert.ok(cleaned.includes('print("hello")'), 'Should preserve code');
+    }); test('Python docstrings and blank lines/spacing preservation', () => {
+        const pyCode = `
+def complex_func():
+    """
+    Docstring with leading spaces.
+
+    And a blank line above.
+    """
+    x = "  spaces  "
+    y = """
+    Another multiline string
+    with   multiple   spaces.
+    """
+    return x, y
+`.trim(); const nuclearLevel = LEVELS.find(l => l.name === 'nuclear')!; const cleaned = cleanCode(pyCode, nuclearLevel, 'python'); assert.ok(cleaned.includes('    """\n    Docstring with leading spaces.\n\n    And a blank line above.\n    """'), 'Should preserve multi-line docstring and its spacing/blank lines completely'); assert.ok(cleaned.includes('x = "  spaces  "'), 'Should preserve exact inner spaces of single line strings'); assert.ok(cleaned.includes('    y = """\n    Another multiline string\n    with   multiple   spaces.\n    """'), 'Should preserve exact spacing inside multiline string assignment'); assert.ok(cleaned.includes('def complex_func():'), 'Should keep function definition'); assert.ok(cleaned.includes('    return x, y'), 'Should keep function return and indentation');
+    }); test('HTML comment stripping', () => {
+        const htmlCode = `
+<!-- This is a comment  -->
 <div class = "test">Hello World</div>
-`.trim();
- const compactLevel = LEVELS.find(l => l.name === 'compact')!;
- const cleaned = cleanCode(htmlCode, compactLevel, 'html');
- assert.ok(!cleaned.includes('<!--'), 'Should strip HTML comment start');
- assert.ok(!cleaned.includes('-->'), 'Should strip HTML comment end');
- assert.ok(!cleaned.includes(''), 'Should strip emojis');
- assert.strictEqual(cleaned.trim(), '<div class = "test">Hello World</div>');
- });
- test('JSON with comments (JSONC) stripping', () => {
- const jsoncCode = `
+`.trim(); const compactLevel = LEVELS.find(l => l.name === 'compact')!; const cleaned = cleanCode(htmlCode, compactLevel, 'html'); assert.ok(!cleaned.includes('<!--'), 'Should strip HTML comment start'); assert.ok(!cleaned.includes('-->'), 'Should strip HTML comment end'); assert.ok(!cleaned.includes(''), 'Should strip emojis'); assert.strictEqual(cleaned.trim(), '<div class = "test">Hello World</div>');
+    }); test('JSON with comments (JSONC) stripping', () => {
+        const jsoncCode = `
 {
  // compiler configuration
  "compilerOptions": {
  "target": "es2022" /* target js version */
  }
 }
-`.trim();
- const compactLevel = LEVELS.find(l => l.name === 'compact')!;
- const cleaned = cleanCode(jsoncCode, compactLevel, 'json');
- assert.ok(!cleaned.includes('// compiler configuration'), 'Should strip line comment');
- assert.ok(!cleaned.includes('/* target js version */'), 'Should strip block comment');
- assert.ok(cleaned.includes('"target": "es2022"'), 'Should preserve valid JSON content');
- });
-});
-suite('getLangFromFilename Test Suite', () => {
- test('Maps common JS/TS extensions', () => {
- assert.strictEqual(getLangFromFilename('app.js'), 'js');
- assert.strictEqual(getLangFromFilename('app.jsx'), 'js');
- assert.strictEqual(getLangFromFilename('app.mjs'), 'js');
- assert.strictEqual(getLangFromFilename('index.ts'), 'ts');
- assert.strictEqual(getLangFromFilename('component.tsx'), 'ts');
- });
- test('Maps Python extensions', () => {
- assert.strictEqual(getLangFromFilename('main.py'), 'python');
- assert.strictEqual(getLangFromFilename('script.pyw'), 'python');
- });
- test('Maps C/C++ extensions', () => {
- assert.strictEqual(getLangFromFilename('main.c'), 'c');
- assert.strictEqual(getLangFromFilename('utils.cpp'), 'c');
- assert.strictEqual(getLangFromFilename('header.h'), 'c');
- assert.strictEqual(getLangFromFilename('header.hpp'), 'c');
- });
- test('Maps web extensions', () => {
- assert.strictEqual(getLangFromFilename('style.css'), 'css');
- assert.strictEqual(getLangFromFilename('index.html'), 'html');
- assert.strictEqual(getLangFromFilename('page.htm'), 'html');
- });
- test('Maps other supported languages', () => {
- assert.strictEqual(getLangFromFilename('Main.java'), 'java');
- assert.strictEqual(getLangFromFilename('main.rs'), 'rust');
- assert.strictEqual(getLangFromFilename('main.go'), 'go');
- assert.strictEqual(getLangFromFilename('app.rb'), 'ruby');
- assert.strictEqual(getLangFromFilename('index.php'), 'php');
- assert.strictEqual(getLangFromFilename('App.swift'), 'swift');
- assert.strictEqual(getLangFromFilename('deploy.sh'), 'sh');
- assert.strictEqual(getLangFromFilename('query.sql'), 'sql');
- assert.strictEqual(getLangFromFilename('config.yaml'), 'yaml');
- assert.strictEqual(getLangFromFilename('config.yml'), 'yaml');
- assert.strictEqual(getLangFromFilename('data.json'), 'json');
- assert.strictEqual(getLangFromFilename('script.lua'), 'lua');
- assert.strictEqual(getLangFromFilename('main.dart'), 'dart');
- assert.strictEqual(getLangFromFilename('Main.scala'), 'scala');
- assert.strictEqual(getLangFromFilename('App.kt'), 'kotlin');
- });
- test('Returns null for unsupported extensions', () => {
- assert.strictEqual(getLangFromFilename('image.png'), null);
- assert.strictEqual(getLangFromFilename('data.csv'), null);
- assert.strictEqual(getLangFromFilename('README.md'), null);
- assert.strictEqual(getLangFromFilename('binary.exe'), null);
- assert.strictEqual(getLangFromFilename('noext'), null);
- });
-});
+`.trim(); const compactLevel = LEVELS.find(l => l.name === 'compact')!; const cleaned = cleanCode(jsoncCode, compactLevel, 'json'); assert.ok(!cleaned.includes('// compiler configuration'), 'Should strip line comment'); assert.ok(!cleaned.includes('/* target js version */'), 'Should strip block comment'); assert.ok(cleaned.includes('"target": "es2022"'), 'Should preserve valid JSON content');
+    });
+}); suite('getLangFromFilename Test Suite', () => { test('Maps common JS/TS extensions', () => { assert.strictEqual(getLangFromFilename('app.js'), 'js'); assert.strictEqual(getLangFromFilename('app.jsx'), 'js'); assert.strictEqual(getLangFromFilename('app.mjs'), 'js'); assert.strictEqual(getLangFromFilename('index.ts'), 'ts'); assert.strictEqual(getLangFromFilename('component.tsx'), 'ts'); }); test('Maps Python extensions', () => { assert.strictEqual(getLangFromFilename('main.py'), 'python'); assert.strictEqual(getLangFromFilename('script.pyw'), 'python'); }); test('Maps C/C++ extensions', () => { assert.strictEqual(getLangFromFilename('main.c'), 'c'); assert.strictEqual(getLangFromFilename('utils.cpp'), 'c'); assert.strictEqual(getLangFromFilename('header.h'), 'c'); assert.strictEqual(getLangFromFilename('header.hpp'), 'c'); }); test('Maps web extensions', () => { assert.strictEqual(getLangFromFilename('style.css'), 'css'); assert.strictEqual(getLangFromFilename('index.html'), 'html'); assert.strictEqual(getLangFromFilename('page.htm'), 'html'); }); test('Maps other supported languages', () => { assert.strictEqual(getLangFromFilename('Main.java'), 'java'); assert.strictEqual(getLangFromFilename('main.rs'), 'rust'); assert.strictEqual(getLangFromFilename('main.go'), 'go'); assert.strictEqual(getLangFromFilename('app.rb'), 'ruby'); assert.strictEqual(getLangFromFilename('index.php'), 'php'); assert.strictEqual(getLangFromFilename('App.swift'), 'swift'); assert.strictEqual(getLangFromFilename('deploy.sh'), 'sh'); assert.strictEqual(getLangFromFilename('query.sql'), 'sql'); assert.strictEqual(getLangFromFilename('config.yaml'), 'yaml'); assert.strictEqual(getLangFromFilename('config.yml'), 'yaml'); assert.strictEqual(getLangFromFilename('data.json'), 'json'); assert.strictEqual(getLangFromFilename('script.lua'), 'lua'); assert.strictEqual(getLangFromFilename('main.dart'), 'dart'); assert.strictEqual(getLangFromFilename('Main.scala'), 'scala'); assert.strictEqual(getLangFromFilename('App.kt'), 'kotlin'); }); test('Returns null for unsupported extensions', () => { assert.strictEqual(getLangFromFilename('image.png'), null); assert.strictEqual(getLangFromFilename('data.csv'), null); assert.strictEqual(getLangFromFilename('README.md'), null); assert.strictEqual(getLangFromFilename('binary.exe'), null); assert.strictEqual(getLangFromFilename('noext'), null); }); }); suite('Code Cleaner Safety & Regression Test Suite', () => { test('Rust lifetime and label preservation', () => { const rustCode = `fn foo<'a>(x: &'a str) {\n    'loop1: loop {\n        break;\n    }\n}`; const level = LEVELS.find(l => l.name === 'compact')!; const cleaned = cleanCode(rustCode, level, 'rust'); assert.ok(cleaned.includes("<'a>"), 'Should preserve lifetimes'); assert.ok(cleaned.includes("&'a str"), 'Should preserve referenced lifetimes'); assert.ok(cleaned.includes("'loop1:"), 'Should preserve loop labels'); }); test('C++ digit separators', () => { const cppCode = `int x = 1'000'000;\ndouble y = 1.000'001;`; const level = LEVELS.find(l => l.name === 'compact')!; const cleaned = cleanCode(cppCode, level, 'c'); assert.strictEqual(cleaned.trim(), `int x = 1'000'000;\ndouble y = 1.000'001;`); }); test('JS/TS regex literals with comments', () => { const jsCode = `const urlRegex = /https?:\\/\\/[^\\s]+/g;\nconst slashRegex = /\\//;`; const level = LEVELS.find(l => l.name === 'compact')!; const cleaned = cleanCode(jsCode, level, 'js'); assert.ok(cleaned.includes('/https?:\\/\\/[^\\s]+/g'), 'Should preserve regexes with comment-like slashes'); assert.ok(cleaned.includes('/\\//'), 'Should preserve escaped slashes inside regex'); }); test('JS/TS template literal nesting and expressions', () => { const jsCode = "const s = `hello ${`nested ${1 + 2} template`} world`;"; const level = LEVELS.find(l => l.name === 'compact')!; const cleaned = cleanCode(jsCode, level, 'js'); assert.strictEqual(cleaned.trim(), jsCode.trim(), 'Should preserve template string including nested template literal exactly'); }); test('Compound assignment formatting safety', () => { const jsCode = `x += 5;\ny -= 10;\nz *= 2;\na /= 3;\nb %= 4;\nc &= 1;\nd |= 2;\ne ^= 3;\nf <<= 1;\ng >>= 2;\nh >>>= 3;\ni &&= true;\nj ||= false;\nk ??= "default";\nx = 5;\ny == 10;\nz === 2;\na != 3;\nb !== 4;\nc <= 1;\nd >= 2;\ne => e * 2;`; const level = LEVELS.find(l => l.name === 'compact')!; const cleaned = cleanCode(jsCode, level, 'js'); assert.strictEqual(cleaned, `x += 5;\ny -= 10;\nz *= 2;\na /= 3;\nb %= 4;\nc &= 1;\nd |= 2;\ne ^= 3;\nf <<= 1;\ng >>= 2;\nh >>>= 3;\ni &&= true;\nj ||= false;\nk ??= "default";\nx = 5;\ny == 10;\nz === 2;\na != 3;\nb !== 4;\nc <= 1;\nd >= 2;\ne => e * 2;`); }); test('SQL escaped quotes preservation', () => { const sqlCode = `SELECT * FROM users WHERE name = 'It''s a database';`; const level = LEVELS.find(l => l.name === 'compact')!; const cleaned = cleanCode(sqlCode, level, 'sql'); assert.strictEqual(cleaned.trim(), `SELECT * FROM users WHERE name = 'It''s a database';`); }); test('Nested block comments stripping', () => { const swiftCode = `let x = 5; /* outer /* inner */ outer */\nlet y = 10;`; const level = LEVELS.find(l => l.name === 'compact')!; const cleaned = cleanCode(swiftCode, level, 'swift'); assert.strictEqual(cleaned.trim(), `let x = 5;\nlet y = 10;`); }); });

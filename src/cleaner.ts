@@ -106,93 +106,273 @@ export function detectLang(code: string): string {
  }
  return top > 0 ? best : 'text';
 }
-function stripComments(code: string, lang: string): string {
- // Core Engine: Matches strings (Group 1) OR comments.
- // If it's a string, it skips it. If it's a comment, it removes it.
- const safeReplace = (text: string, commentRegex: string, quotes: string[]) => {
- // Dynamically build syntax-safe string matchers based on the language's quote types
- const stringPatterns = quotes.map(q => {
- const eq = q.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
- if (q.length > 1) {
- return `${eq}(?:(?!${eq})[\\s\\S])*${eq}`;
- } else {
- return `${eq}(?:[^${eq}\\\\]|\\\\.)*${eq}`;
- }
- }).join('|');
- const combinedRegex = new RegExp(`(${stringPatterns})|${commentRegex}`, 'g');
- return text.replace(combinedRegex, (match, isString) => isString ? match : '');
- };
- if (lang === 'sh') {
- return code.split('\n').map((l, i) => {
- if (i === 0 && l.startsWith('#!')) return l;
- return safeReplace(l, '#[^\\n]*', ['"', "'"]);
- }).join('\n');
- }
- if (lang === 'python') {
- return safeReplace(code, '#[^\\n]*', ['"""', "'''", '"', "'"]);
- }
- if (['ruby', 'yaml'].includes(lang)) {
- return safeReplace(code, '#[^\\n]*', ['"', "'"]);
- }
- if (lang === 'html') {
- // HTML comment syntax rarely collides with string contents
- return code.replace(/<!--[\s\S]*?-->/g, '');
- }
- if (lang === 'css') {
- return safeReplace(code, '\\/\\*[\\s\\S]*?\\*\\/', ['"', "'"]);
- }
- if (lang === 'lua') {
- return safeReplace(code, '--\\[\\[[\\s\\S]*?\\]\\]|--[^\\n]*', ['"', "'"]);
- }
- if (lang === 'php') {
- return safeReplace(code, '\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/|#[^\\n]*', ['"', "'", '`']);
- }
- if (lang === 'sql') {
- return safeReplace(code, '--[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/', ["'"]);
- }
- if (lang === 'json') {
- return safeReplace(code, '\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/', ['"', "'"]);
- }
- // Default: C-style — JS, TS, Java, Kotlin, C, C++, Rust, Go, Swift, Dart, Scala
- // Protects double quotes, single quotes, and backticks (template literals)
- return safeReplace(code, '\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/', ['"', "'", '`']);
+interface Segment {
+ type: 'code' | 'string' | 'comment';
+ value: string;
 }
-function safeFix(line: string, lang: string, fixFn: (text: string) => string): string {
+
+function tokenize(code: string, lang: string): Segment[] {
  let quotes: string[] = ['"', "'"];
- let commentPattern: string | null = null;
- 
+ let lineComments: string[] = [];
+ let blockComments: [string, string][] = [];
+
  if (lang === 'python') {
   quotes = ['"""', "'''", '"', "'"];
-  commentPattern = '#[^\\n]*';
- } else if (lang === 'js' || lang === 'ts' || lang === 'php') {
-  quotes = ['"', "'", '`'];
-  commentPattern = '\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/';
- } else if (lang === 'sh' || lang === 'ruby' || lang === 'yaml') {
-  commentPattern = '#[^\\n]*';
+  lineComments = ['#'];
+ } else if (['js', 'ts', 'java', 'kotlin', 'c', 'rust', 'go', 'swift', 'dart', 'scala', 'php', 'json'].includes(lang)) {
+  quotes = ['"', "'"];
+  if (['js', 'ts'].includes(lang)) {
+   quotes = ['"', "'", '`'];
+  }
+  lineComments = ['//'];
+  blockComments = [['/*', '*/']];
+  if (lang === 'php') {
+   lineComments = ['//', '#'];
+  }
+ } else if (['sh', 'ruby', 'yaml'].includes(lang)) {
+  lineComments = ['#'];
+  quotes = ['"', "'"];
+ } else if (lang === 'html') {
+  blockComments = [['<!--', '-->']];
+ } else if (lang === 'css') {
+  blockComments = [['/*', '*/']];
+ } else if (lang === 'lua') {
+  lineComments = ['--'];
+  blockComments = [['--[[', ']]']];
+  quotes = ['"', "'"];
+ } else if (lang === 'sql') {
+  lineComments = ['--'];
+  blockComments = [['/*', '*/']];
+  quotes = ["'"];
  } else {
-  commentPattern = '\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/';
+  quotes = ['"', "'"];
  }
- 
- const stringPatterns = quotes.map(q => {
-  const eq = q.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-  if (q.length > 1) {
-   return `${eq}(?:(?!${eq})[\\s\\S])*${eq}`;
-  } else {
-   return `${eq}(?:[^${eq}\\\\]|\\\\.)*${eq}`;
+
+ quotes.sort((a, b) => b.length - a.length);
+ lineComments.sort((a, b) => b.length - a.length);
+ blockComments.sort((a, b) => b[0].length - a[0].length);
+
+ const segments: Segment[] = [];
+ let i = 0;
+ let currentCodeStart = 0;
+
+ const flushCode = (endIndex: number) => {
+  if (endIndex > currentCodeStart) {
+   const value = code.substring(currentCodeStart, endIndex);
+   if (value) {
+    segments.push({ type: 'code', value });
+   }
   }
- }).join('|');
- 
- const pattern = `(${stringPatterns}${commentPattern ? '|' + commentPattern : ''})`;
- const regex = new RegExp(pattern, 'g');
- const parts = line.split(regex);
- 
- for (let i = 0; i < parts.length; i += 2) {
-  if (parts[i]) {
-   parts[i] = fixFn(parts[i]);
+  currentCodeStart = endIndex;
+ };
+
+ const stateStack: any[] = [{ type: 'code' }];
+
+ while (i < code.length) {
+  const state = stateStack[stateStack.length - 1];
+
+  if (state.type === 'code' || state.type === 'template_expr') {
+   if (state.type === 'template_expr') {
+    if (code[i] === '{') {
+     state.braceDepth++;
+     i++;
+     continue;
+    }
+    if (code[i] === '}') {
+     state.braceDepth--;
+     if (state.braceDepth === 0) {
+      flushCode(i);
+      stateStack.pop();
+      currentCodeStart = i; // Process '}' in the string state
+      continue;
+     }
+     i++;
+     continue;
+    }
+   }
+
+   // Check block comments
+   let matchedBlock: [string, string] | null = null;
+   for (const bc of blockComments) {
+    if (code.startsWith(bc[0], i)) {
+     matchedBlock = bc;
+     break;
+    }
+   }
+   if (matchedBlock) {
+    flushCode(i);
+    if (['swift', 'kotlin', 'rust', 'scala'].includes(lang)) {
+     stateStack.push({ type: 'block_comment', opener: matchedBlock[0], closer: matchedBlock[1], depth: 1, start: i });
+    } else {
+     stateStack.push({ type: 'block_comment', opener: matchedBlock[0], closer: matchedBlock[1], start: i });
+    }
+    i += matchedBlock[0].length;
+    continue;
+   }
+
+   // Check line comments
+   let matchedLineComment: string | null = null;
+   for (const lc of lineComments) {
+    if (lang === 'sh' && lc === '#' && i === 0 && code.startsWith('#!')) {
+     continue;
+    }
+    if (code.startsWith(lc, i)) {
+     matchedLineComment = lc;
+     break;
+    }
+   }
+   if (matchedLineComment) {
+    flushCode(i);
+    stateStack.push({ type: 'line_comment', opener: matchedLineComment, start: i });
+    i += matchedLineComment.length;
+    continue;
+   }
+
+   // Check JS/TS Regex literal
+   if (['js', 'ts'].includes(lang) && code[i] === '/' && code[i+1] !== '/' && code[i+1] !== '*') {
+    let k = i - 1;
+    while (k >= 0 && /\s/.test(code[k])) {
+     k--;
+    }
+    const isRegex = k < 0 || "=+-%&|^!?:,;<>([]{}=~".includes(code[k]) || (/[a-zA-Z]/.test(code[k]) && (() => {
+     let wordStart = k;
+     while (wordStart >= 0 && /[a-zA-Z0-9_$]/.test(code[wordStart])) {
+      wordStart--;
+     }
+     const word = code.substring(wordStart + 1, k + 1);
+     const regexKeywords = ['return', 'throw', 'yield', 'typeof', 'delete', 'void', 'in', 'instanceof', 'new', 'default', 'case'];
+     return regexKeywords.includes(word);
+    })());
+    if (isRegex) {
+     flushCode(i);
+     stateStack.push({ type: 'regex', start: i });
+     i++;
+     continue;
+    }
+   }
+
+   // Check string delimiter
+   let matchedQuote: string | null = null;
+   for (const q of quotes) {
+    if (lang === 'rust' && q === "'") {
+     const sub = code.substring(i);
+     const charMatch = sub.match(/^'([^'\\]|\\.)'/);
+     const unicodeCharMatch = sub.match(/^'\\u\{[0-9a-fA-F]{1,6}\}'/);
+     if (!charMatch && !unicodeCharMatch) {
+      continue;
+     }
+    }
+    if (lang === 'c' && q === "'") {
+     const prevChar = i > 0 ? code[i - 1] : '';
+     const nextChar = i + 1 < code.length ? code[i + 1] : '';
+     const isDigit = (c: string) => /[0-9a-fA-F]/.test(c);
+     if (isDigit(prevChar) && isDigit(nextChar)) {
+      continue;
+     }
+    }
+    if (code.startsWith(q, i)) {
+     matchedQuote = q;
+     break;
+    }
+   }
+   if (matchedQuote) {
+    flushCode(i);
+    stateStack.push({ type: 'string', delimiter: matchedQuote, start: i });
+    i += matchedQuote.length;
+    continue;
+   }
+
+   i++;
+  } else if (state.type === 'block_comment') {
+   if (state.depth !== undefined) {
+    if (code.startsWith(state.opener, i)) {
+     state.depth++;
+     i += state.opener.length;
+     continue;
+    }
+    if (code.startsWith(state.closer, i)) {
+     state.depth--;
+     i += state.closer.length;
+     if (state.depth === 0) {
+      segments.push({ type: 'comment', value: code.substring(state.start, i) });
+      stateStack.pop();
+      currentCodeStart = i;
+     }
+     continue;
+    }
+   } else {
+    if (code.startsWith(state.closer, i)) {
+     i += state.closer.length;
+     segments.push({ type: 'comment', value: code.substring(state.start, i) });
+     stateStack.pop();
+     currentCodeStart = i;
+     continue;
+    }
+   }
+   i++;
+  } else if (state.type === 'line_comment') {
+   if (code[i] === '\n') {
+    segments.push({ type: 'comment', value: code.substring(state.start, i) });
+    stateStack.pop();
+    currentCodeStart = i;
+    continue;
+   }
+   i++;
+  } else if (state.type === 'regex') {
+   if (code[i] === '\\') {
+    i += 2;
+    continue;
+   }
+   if (code[i] === '/') {
+    i++;
+    while (i < code.length && /[a-z]/i.test(code[i])) {
+     i++;
+    }
+    segments.push({ type: 'string', value: code.substring(state.start, i) });
+    stateStack.pop();
+    currentCodeStart = i;
+    continue;
+   }
+   i++;
+  } else if (state.type === 'string') {
+   if (lang === 'sql' && state.delimiter === "'") {
+    if (code[i] === "'" && code[i+1] === "'") {
+     i += 2;
+     continue;
+    }
+   }
+   if (code[i] === '\\') {
+    i += 2;
+    continue;
+   }
+   if (code.startsWith(state.delimiter, i)) {
+    i += state.delimiter.length;
+    segments.push({ type: 'string', value: code.substring(state.start, i) });
+    stateStack.pop();
+    currentCodeStart = i;
+    continue;
+   }
+   if (['js', 'ts'].includes(lang) && state.delimiter === '`' && code.startsWith('${', i)) {
+    segments.push({ type: 'string', value: code.substring(state.start, i + 2) });
+    stateStack.push({ type: 'template_expr', braceDepth: 1, start: i + 2 });
+    i += 2;
+    currentCodeStart = i;
+    continue;
+   }
+   i++;
   }
  }
- return parts.join('');
+
+ if (i > currentCodeStart) {
+  const state = stateStack[stateStack.length - 1];
+  const type = (state.type === 'block_comment' || state.type === 'line_comment') ? 'comment' :
+               (state.type === 'string' || state.type === 'regex') ? 'string' : 'code';
+  segments.push({ type, value: code.substring(currentCodeStart, i) });
+ }
+
+ return segments;
 }
+
 function fixOps(line: string, lang: string): string {
  if (NO_OP_FIX.has(lang)) return line;
  const match = line.match(/^(\s*)(.*)$/);
@@ -200,21 +380,17 @@ function fixOps(line: string, lang: string): string {
  const indent = match[1];
  const content = match[2];
  
- const fixedContent = safeFix(content, lang, (text) => {
-  if (lang === 'python') {
-   return text.replace(/, ([^\s\n])/g, ', $1').replace(/[ \t]+/g, ' ');
-  } else if (['ruby', 'rust', 'go', 'swift', 'kotlin', 'scala', 'dart', 'c', 'php'].includes(lang)) {
-   return text.replace(/, ([^\s])/g, ', $1').replace(/[ \t]+/g, ' ');
-  } else if (lang === 'java') {
-   return text.replace(/([^ = !<>\-]) = ([^>=])/g, '$1 = $2').replace(/, ([^\s])/g, ', $1').replace(/[ \t]+/g, ' ');
-  } else if (lang === 'js' || lang === 'ts') {
-   return text.replace(/([^ = !<>]) = ([^>=])/g, '$1 = $2').replace(/, ([^\s\n])/g, ', $1').replace(/[ \t]+/g, ' ');
-  } else {
-   return text.replace(/, ([^\s])/g, ', $1').replace(/[ \t]+/g, ' ');
-  }
- });
+ let fixedContent = content;
+ if (lang === 'python') {
+  fixedContent = fixedContent.replace(/, ([^\s\n])/g, ', $1').replace(/[ \t]+/g, ' ');
+ } else if (['ruby', 'rust', 'go', 'swift', 'kotlin', 'scala', 'dart', 'c', 'php', 'js', 'ts', 'java'].includes(lang)) {
+  fixedContent = fixedContent.replace(/([^ \t\r\n+\-*/%&|^<>!=?~:]\s*)=\s*([^=>\s])/g, '$1 = $2').replace(/, ([^\s\n])/g, ', $1').replace(/[ \t]+/g, ' ');
+ } else {
+  fixedContent = fixedContent.replace(/, ([^\s\n])/g, ', $1').replace(/[ \t]+/g, ' ');
+ }
  return indent + fixedContent;
 }
+
 export function getWarning(lang: string, level: CleanLevel): string | null {
  if (INDENT_SENSITIVE.has(lang) && (level.removeIndent || level.collapseAll)) {
  return `${LANG_NAMES[lang] || lang.toUpperCase()} uses indentation as syntax — removing it will break your code!`;
@@ -224,25 +400,58 @@ export function getWarning(lang: string, level: CleanLevel): string | null {
  }
  return null;
 }
+
 export function cleanCode(code: string, level: CleanLevel, lang: string, removeEmojisOverride?: boolean): string {
  let result = code;
  const removeEmojis = removeEmojisOverride ?? level.removeEmojis;
  if (removeEmojis) {
- result = result.replace(/(?![©®™])[\p{Extended_Pictographic}\u{1F3FB}-\u{1F3FF}\u{1F1E6}-\u{1F1FF}\u{200d}\u{fe0f}]/gu, '');
+  result = result.replace(/(?![©®™])[\p{Extended_Pictographic}\u{1F3FB}-\u{1F3FF}\u{1F1E6}-\u{1F1FF}\u{200d}\u{fe0f}]/gu, '');
  }
- if (level.removeComments) { result = stripComments(result, lang); }
- let lines = result.split('\n');
- 
+
+ const segments = tokenize(result, lang);
+ const stringPlaceholders: string[] = [];
+ let cleanWithPlaceholders = '';
+
+ for (const seg of segments) {
+  if (seg.type === 'comment') {
+   if (!level.removeComments) {
+    cleanWithPlaceholders += seg.value;
+   } else if (lang === 'sh' && seg.value.startsWith('#!')) {
+    cleanWithPlaceholders += seg.value;
+   }
+  } else if (seg.type === 'string') {
+   const placeholder = `___CLEANER_STR_TOKEN_${Date.now()}_${Math.random().toString(36).substr(2, 9)}_${stringPlaceholders.length}___`;
+   stringPlaceholders.push(seg.value);
+   cleanWithPlaceholders += placeholder;
+  } else {
+   cleanWithPlaceholders += seg.value;
+  }
+ }
+
+ let lines = cleanWithPlaceholders.split('\n');
  const shouldRemoveIndent = level.removeIndent && !INDENT_SENSITIVE.has(lang);
  lines = lines.map(l => (shouldRemoveIndent ? l.trimStart() : l).trimEnd());
- 
- if (level.removeBlankLines) { lines = lines.filter(l => l.trim() !== ''); }
- if (level.fixOperators) { lines = lines.map(l => fixOps(l, lang)); }
- 
+
+ if (level.removeBlankLines) {
+  lines = lines.filter(l => l.trim() !== '');
+ }
+
+ if (level.fixOperators) {
+  lines = lines.map(l => fixOps(l, lang));
+ }
+
  const shouldCollapse = level.collapseAll && !NEWLINE_SENSITIVE.has(lang);
- result = lines.join(shouldCollapse ? ' ' : '\n');
- if (shouldCollapse) { result = result.replace(/\s+/g, ' ').trim(); }
- return result;
+ let cleanedText = lines.join(shouldCollapse ? ' ' : '\n');
+ if (shouldCollapse) {
+  cleanedText = cleanedText.replace(/\s+/g, ' ').trim();
+ }
+
+ for (let i = 0; i < stringPlaceholders.length; i++) {
+  const regex = new RegExp(`___CLEANER_STR_TOKEN_[0-9]+_[a-z0-9]+_${i}___`, 'g');
+  cleanedText = cleanedText.replace(regex, () => stringPlaceholders[i]);
+ }
+
+ return cleanedText;
 }
 export function getLangFromFilename(filename: string): string | null {
  const ext = filename.split('.').pop()?.toLowerCase();
