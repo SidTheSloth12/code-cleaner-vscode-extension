@@ -43,8 +43,31 @@ export function activate(context: vscode.ExtensionContext) {
  editBuilder.replace(fullRange, cleanedText);
  }
  });
+
+ if (hasSelection) {
+ const start = editorSelection.start;
+ const lines = cleanedText.split('\n');
+ const endLine = start.line + lines.length - 1;
+ const endChar = lines.length === 1 ? start.character + cleanedText.length : lines[lines.length - 1].length;
+ const newSelection = new vscode.Selection(start, new vscode.Position(endLine, endChar));
+ editor.selection = newSelection;
+ }
+
+ if (!chosenLevel.removeIndent) {
+ try {
+ if (hasSelection) {
+ await vscode.commands.executeCommand('editor.action.formatSelection');
+ } else {
+ await vscode.commands.executeCommand('editor.action.formatDocument');
+ }
+ } catch (err) {
+ console.error('Formatting failed:', err);
+ }
+ }
+
+ const updatedText = hasSelection ? document.getText(editor.selection) : document.getText();
  const originalChars = originalText.length;
- const cleanedChars = cleanedText.length;
+ const cleanedChars = updatedText.length;
  const savedPct = originalChars > 0 ? Math.round((1 - cleanedChars / originalChars) * 100) : 0;
  const scope = hasSelection ? 'Selection' : 'File';
  vscode.window.showInformationMessage(` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label}! ${scope} size is now ↓ ${savedPct}% smaller.`);
@@ -117,11 +140,39 @@ export function activate(context: vscode.ExtensionContext) {
  const originalText = new TextDecoder('utf-8').decode(fileContentBytes);
  const lang = getLangFromFilename(filename)!;
  const cleanedText = cleanCode(originalText, chosenLevel, lang, removeEmojis);
- if (cleanedText !== originalText) {
- await vscode.workspace.fs.writeFile(fileUri, new TextEncoder().encode(cleanedText));
+ 
+ let finalLength = cleanedText.length;
+ if (cleanedText !== originalText || !chosenLevel.removeIndent) {
+ const doc = await vscode.workspace.openTextDocument(fileUri);
+ const edit = new vscode.WorkspaceEdit();
+ const firstLine = doc.lineAt(0);
+ const lastLine = doc.lineAt(doc.lineCount - 1);
+ const fullRange = new vscode.Range(firstLine.range.start, lastLine.range.end);
+ edit.replace(fileUri, fullRange, cleanedText);
+ await vscode.workspace.applyEdit(edit);
+ 
+ if (!chosenLevel.removeIndent) {
+ try {
+ const edits = await vscode.commands.executeCommand<vscode.TextEdit[]>(
+ 'vscode.executeFormatDocumentProvider',
+ fileUri,
+ {}
+ );
+ if (edits && edits.length > 0) {
+ const formatEdit = new vscode.WorkspaceEdit();
+ formatEdit.set(fileUri, edits);
+ await vscode.workspace.applyEdit(formatEdit);
  }
- totalOriginalChars + = originalText.length;
- totalCleanedChars + = cleanedText.length;
+ } catch (formatErr) {
+ console.error(`Formatting failed for folder file ${fileUri.fsPath}:`, formatErr);
+ }
+ }
+ await doc.save();
+ finalLength = doc.getText().length;
+ }
+ 
+ totalOriginalChars += originalText.length;
+ totalCleanedChars += finalLength;
  cleanedCount++;
  } catch (err) {
  console.error(`Failed to clean file ${fileUri.fsPath}:`, err);

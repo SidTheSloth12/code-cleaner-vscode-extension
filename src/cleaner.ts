@@ -56,46 +56,46 @@ export function detectLang(code: string): string {
  c:0, rust:0, go:0, ruby:0, php:0, swift:0,
  sh:0, sql:0, yaml:0, json:0, lua:0, dart:0, scala:0
  };
- if (/def\s+\w+\s*\(|from\s+\w+\s+import|print\s*\(/.test(code)) s.python + = 3;
- if (new RegExp('elif\\s+|lambda\\s+|__name__|\\.format\\(|f[\'"]|^\\s*@\\w+', 'm').test(code)) s.python + = 2;
- if (/:\s*$|^\s{4}/m.test(code) && /def |class |if |for |while /.test(code)) s.python + = 1;
- if (/: \s*(string|number|boolean|void|any|never|unknown)\b|interface\s+\w+|type\s+\w+\s* = |as\s+\w+/.test(code)) s.ts + = 4;
- if (/enum\s+\w+|readonly\s+|implements\s+\w+|declare\s+/.test(code)) s.ts + = 3;
- if (/function\s+\w+|const\s+|let\s+|var\s+|=>\s*{|require\(|console\.log/.test(code)) s.js + = 3;
- if (/document\.|window\.|async\s+function|\.then\(|Promise\./.test(code)) s.js + = 2;
- if (/@media|@keyframes|\.\[\w-\]+\s*\{|#[\w-]+\s*\{/.test(code)) s.css + = 4;
- if (new RegExp(':\\s*[\\w#"\'.]+\\s*;').test(code)) s.css + = 2;
- if (/<html|<div|<span|<body|<head|<!DOCTYPE/i.test(code)) s.html + = 4;
- if (/<\/\w+>/.test(code)) s.html + = 2;
- if (/public\s+(static\s+)?(?:void|class|int|String)|System\.out|import\s+java\./.test(code)) s.java + = 4;
- if (/@Override|@SuppressWarnings|extends\s+\w+/.test(code)) s.java + = 2;
- if (/fun\s+\w+\s*\(|val\s+\w+|println\(|data\s+class|object\s+\w+/.test(code)) s.kotlin + = 4;
- if (/companion\s+object|suspend\s+fun|when\s*\(|\.let\s*\{/.test(code)) s.kotlin + = 3;
- if (/#include\s+<|printf\s*\(|int\s+main\s*\(/.test(code)) s.c + = 4;
- if (/std::|cout\s*<<|cin\s*>>|nullptr/.test(code)) s.c + = 2;
- if (/fn\s+\w+|let\s+mut\s|impl\s+\w+|use\s+std::|println!/.test(code)) s.rust + = 4;
- if (/match\s+\w+|Some\(|None\b|Result<|unwrap\(\)/.test(code)) s.rust + = 3;
- if (/func\s+\w+.*\{|package\s+main|fmt\.Println|: = \s/.test(code)) s.go + = 4;
- if (/goroutine|chan\s+\w+|defer\s+/.test(code)) s.go + = 2;
- if (/def\s+\w+|puts\s+|^\s*end\s*$|\.each\s*\{|attr_accessor/m.test(code)) s.ruby + = 3;
- if (new RegExp('do\\s*\\|.*\\||require\\s+\'|gem\\s+\'|\\.map\\s*\\{').test(code)) s.ruby + = 2;
- if (/<\?php|\$\w+\s* = |echo\s+/.test(code)) s.php + = 4;
- if (/->\s*\w+\(|array\s*\(|\$_GET|\$_POST/.test(code)) s.php + = 2;
- if (/func\s+\w+.*->|UIViewController|@IBOutlet|@IBAction/.test(code)) s.swift + = 4;
- if (/guard\s+let|if\s+let|@State|@Binding/.test(code)) s.swift + = 3;
- if (/\$\{?\w+\}?|fi\b|done\b|then\b/.test(code)) s.sh + = 3;
- if (/^#!\/bin\/(bash|sh|zsh)/m.test(code)) s.sh + = 5;
- if (/SELECT\s+.+FROM|INSERT\s+INTO|CREATE\s+TABLE|DROP\s+TABLE/i.test(code)) s.sql + = 5;
- if (/WHERE\s+|GROUP\s+BY|ORDER\s+BY|JOIN\s+/i.test(code)) s.sql + = 2;
- if (/^[\w-]+:\s*$/m.test(code) && /^\s+-\s+\w+/m.test(code)) s.yaml + = 4;
- if (/^---\s*$/m.test(code) || /^\s{2, }\w+:\s+\S/m.test(code)) s.yaml + = 3;
- if (/^\s*[\[{]/.test(code.trim()) && /"\w+":\s*("?[\d\[{]|true|false|null)/.test(code)) s.json + = 5;
- if (/function\s+\w+\s*\(|local\s+\w+\s* = |then\b|end\b/.test(code)) s.lua + = 3;
- if (/--.*$|ipairs\(|pairs\(|\.\./m.test(code)) s.lua + = 2;
- if (new RegExp('void\\s+main\\s*\\(|import\\s+\'package:|Widget\\s+build|StatelessWidget').test(code)) s.dart + = 4;
- if (/final\s+\w+|List<|Map<|Future</.test(code) && s.dart > 0) s.dart + = 2;
- if (/def\s+\w+.*:\s*\w+\s* = |object\s+\w+\s+extends|case\s+class/.test(code)) s.scala + = 4;
- if (/println\(|List\(|Some\(|None\b/.test(code) && s.scala > 2) s.scala + = 2;
+ if (/def\s+\w+\s*\(|from\s+\w+\s+import|print\s*\(/.test(code)) s.python += 3;
+ if (new RegExp('elif\\s+|lambda\\s+|__name__|\\.format\\(|f[\'"]|^\\s*@\\w+', 'm').test(code)) s.python += 2;
+ if (/:\s*$|^\s{4}/m.test(code) && /def |class |if |for |while /.test(code)) s.python += 1;
+ if (/: \s*(string|number|boolean|void|any|never|unknown)\b|interface\s+\w+|type\s+\w+\s* = |as\s+\w+/.test(code)) s.ts += 4;
+ if (/enum\s+\w+|readonly\s+|implements\s+\w+|declare\s+/.test(code)) s.ts += 3;
+ if (/function\s+\w+|const\s+|let\s+|var\s+|=>\s*{|require\(|console\.log/.test(code)) s.js += 3;
+ if (/document\.|window\.|async\s+function|\.then\(|Promise\./.test(code)) s.js += 2;
+ if (/@media|@keyframes|\.\[\w-\]+\s*\{|#[\w-]+\s*\{/.test(code)) s.css += 4;
+ if (new RegExp(':\\s*[\\w#"\'.]+\\s*;').test(code)) s.css += 2;
+ if (/<html|<div|<span|<body|<head|<!DOCTYPE/i.test(code)) s.html += 4;
+ if (/<\/\w+>/.test(code)) s.html += 2;
+ if (/public\s+(static\s+)?(?:void|class|int|String)|System\.out|import\s+java\./.test(code)) s.java += 4;
+ if (/@Override|@SuppressWarnings|extends\s+\w+/.test(code)) s.java += 2;
+ if (/fun\s+\w+\s*\(|val\s+\w+|println\(|data\s+class|object\s+\w+/.test(code)) s.kotlin += 4;
+ if (/companion\s+object|suspend\s+fun|when\s*\(|\.let\s*\{/.test(code)) s.kotlin += 3;
+ if (/#include\s+<|printf\s*\(|int\s+main\s*\(/.test(code)) s.c += 4;
+ if (/std::|cout\s*<<|cin\s*>>|nullptr/.test(code)) s.c += 2;
+ if (/fn\s+\w+|let\s+mut\s|impl\s+\w+|use\s+std::|println!/.test(code)) s.rust += 4;
+ if (/match\s+\w+|Some\(|None\b|Result<|unwrap\(\)/.test(code)) s.rust += 3;
+ if (/func\s+\w+.*\{|package\s+main|fmt\.Println|: = \s/.test(code)) s.go += 4;
+ if (/goroutine|chan\s+\w+|defer\s+/.test(code)) s.go += 2;
+ if (/def\s+\w+|puts\s+|^\s*end\s*$|\.each\s*\{|attr_accessor/m.test(code)) s.ruby += 3;
+ if (new RegExp('do\\s*\\|.*\\||require\\s+\'|gem\\s+\'|\\.map\\s*\\{').test(code)) s.ruby += 2;
+ if (/<\?php|\$\w+\s* = |echo\s+/.test(code)) s.php += 4;
+ if (/->\s*\w+\(|array\s*\(|\$_GET|\$_POST/.test(code)) s.php += 2;
+ if (/func\s+\w+.*->|UIViewController|@IBOutlet|@IBAction/.test(code)) s.swift += 4;
+ if (/guard\s+let|if\s+let|@State|@Binding/.test(code)) s.swift += 3;
+ if (/\$\{?\w+\}?|fi\b|done\b|then\b/.test(code)) s.sh += 3;
+ if (/^#!\/bin\/(bash|sh|zsh)/m.test(code)) s.sh += 5;
+ if (/SELECT\s+.+FROM|INSERT\s+INTO|CREATE\s+TABLE|DROP\s+TABLE/i.test(code)) s.sql += 5;
+ if (/WHERE\s+|GROUP\s+BY|ORDER\s+BY|JOIN\s+/i.test(code)) s.sql += 2;
+ if (/^[\w-]+:\s*$/m.test(code) && /^\s+-\s+\w+/m.test(code)) s.yaml += 4;
+ if (/^---\s*$/m.test(code) || /^\s{2, }\w+:\s+\S/m.test(code)) s.yaml += 3;
+ if (/^\s*[\[{]/.test(code.trim()) && /"\w+":\s*("?[\d\[{]|true|false|null)/.test(code)) s.json += 5;
+ if (/function\s+\w+\s*\(|local\s+\w+\s* = |then\b|end\b/.test(code)) s.lua += 3;
+ if (/--.*$|ipairs\(|pairs\(|\.\./m.test(code)) s.lua += 2;
+ if (new RegExp('void\\s+main\\s*\\(|import\\s+\'package:|Widget\\s+build|StatelessWidget').test(code)) s.dart += 4;
+ if (/final\s+\w+|List<|Map<|Future</.test(code) && s.dart > 0) s.dart += 2;
+ if (/def\s+\w+.*:\s*\w+\s* = |object\s+\w+\s+extends|case\s+class/.test(code)) s.scala += 4;
+ if (/println\(|List\(|Some\(|None\b/.test(code) && s.scala > 2) s.scala += 2;
  let best = 'text';
  let top = 0;
  for (const [l, v] of Object.entries(s)) {
@@ -159,17 +159,22 @@ function stripComments(code: string, lang: string): string {
 }
 function fixOps(line: string, lang: string): string {
  if (NO_OP_FIX.has(lang)) return line;
- if (lang === 'python') return line.replace(/, ([^\s\n])/g, ', $1').replace(/[ \t]+/g, ' ');
- if (['ruby', 'rust', 'go', 'swift', 'kotlin', 'scala', 'dart', 'c', 'php'].includes(lang)) {
- return line.replace(/, ([^\s])/g, ', $1').replace(/[ \t]+/g, ' ');
+ const match = line.match(/^(\s*)(.*)$/);
+ if (!match) return line;
+ const indent = match[1];
+ let content = match[2];
+ if (lang === 'python') {
+  content = content.replace(/, ([^\s\n])/g, ', $1').replace(/[ \t]+/g, ' ');
+ } else if (['ruby', 'rust', 'go', 'swift', 'kotlin', 'scala', 'dart', 'c', 'php'].includes(lang)) {
+  content = content.replace(/, ([^\s])/g, ', $1').replace(/[ \t]+/g, ' ');
+ } else if (lang === 'java') {
+  content = content.replace(/([^ = !<>\-]) = ([^>=])/g, '$1 = $2').replace(/, ([^\s])/g, ', $1').replace(/[ \t]+/g, ' ');
+ } else if (lang === 'js' || lang === 'ts') {
+  content = content.replace(/([^ = !<>]) = ([^>=])/g, '$1 = $2').replace(/, ([^\s\n])/g, ', $1').replace(/[ \t]+/g, ' ');
+ } else {
+  content = content.replace(/, ([^\s])/g, ', $1').replace(/[ \t]+/g, ' ');
  }
- if (lang === 'java') {
- return line.replace(/([^ = !<>\-]) = ([^>=])/g, '$1 = $2').replace(/, ([^\s])/g, ', $1').replace(/[ \t]+/g, ' ');
- }
- if (lang === 'js' || lang === 'ts') {
- return line.replace(/([^ = !<>]) = ([^>=])/g, '$1 = $2').replace(/, ([^\s\n])/g, ', $1').replace(/[ \t]+/g, ' ');
- }
- return line.replace(/, ([^\s])/g, ', $1').replace(/[ \t]+/g, ' ');
+ return indent + content;
 }
 export function getWarning(lang: string, level: CleanLevel): string | null {
  if (INDENT_SENSITIVE.has(lang) && (level.removeIndent || level.collapseAll)) {
