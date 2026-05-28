@@ -1,29 +1,5 @@
-import * as vscode from 'vscode';
-import { LEVELS, mapVsCodeLang, detectLang, getWarning, cleanCode, getLangFromFilename } from './cleaner';
-export function activate(context: vscode.ExtensionContext) {
- let disposable = vscode.commands.registerCommand('code-cleaner.run', async () => {
- const editor = vscode.window.activeTextEditor;
- if (!editor) {
- vscode.window.showInformationMessage('Open a file first to clean it!');
- return;
- }
- const config = vscode.workspace.getConfiguration('code-cleaner');
- const removeEmojis = config.get<boolean>('removeEmojis', true);
- const document = editor.document;
- const editorSelection = editor.selection;
- const hasSelection = !editorSelection.isEmpty;
- const originalText = hasSelection ? document.getText(editorSelection) : document.getText();
- let mappedLang = getLangFromFilename(document.fileName) || mapVsCodeLang(document.languageId);
- if (mappedLang === 'text') {
- mappedLang = detectLang(originalText);
- }
- const items = LEVELS.map(level => ({
- label: level.name.toUpperCase(),
- description: level.desc,
- level: level
- }));
- const selection = await vscode.window.showQuickPick(items, {
- placeHolder: `Select cleaning depth for this detected ${mappedLang.toUpperCase()} ${hasSelection ? 'selection' : 'file'}:`
+import * as vscode from 'vscode'; import { LEVELS, mapVsCodeLang, detectLang, getWarning, cleanCode, getLangFromFilename } from './cleaner'; export function activate(context: vscode.ExtensionContext) { let disposable = vscode.commands.registerCommand('code-cleaner.run', async () => { const editor = vscode.window.activeTextEditor; if (!editor) { vscode.window.showInformationMessage('Open a file first to clean it!'); return; } const config = vscode.workspace.getConfiguration('code-cleaner'); const removeEmojis = config.get<boolean>('removeEmojis', true); const document = editor.document; const editorSelection = editor.selection; const hasSelection = !editorSelection.isEmpty; const originalText = hasSelection ? document.getText(editorSelection) : document.getText(); let mappedLang = getLangFromFilename(document.fileName) || mapVsCodeLang(document.languageId); if (mappedLang === 'text') { mappedLang = detectLang(originalText); } const items = LEVELS.map(level => ({ label: level.name.toUpperCase(), description: level.desc, level: level })); const selection = await vscode.window.showQuickPick(items, { placeHolder: `Select cleaning depth for this detected ${mappedLang.toUpperCase()`Select cleaning depth for this detected ${mappedLang.toUpperCase()`Select cleaning depth for this detected ${mappedLang.toUpperCase()`Select cleaning depth for this detected ${mappedLang.toUpperCase()`Select cleaning depth for this detected ${mappedLang.toUpperCase()} ${hasSelection ? 'selection' : 'file'`Select cleaning depth for this detected ${mappedLang.toUpperCase()`Select cleaning depth for this detected ${mappedLang.toUpperCase()`Select cleaning depth for this detected ${mappedLang.toUpperCase()`Select cleaning depth for this detected ${mappedLang.toUpperCase()} ${hasSelection ? 'selection' : 'file'`Select cleaning depth for this detected ${mappedLang.toUpperCase()`Select cleaning depth for this detected ${mappedLang.toUpperCase()`Select cleaning depth for this detected ${mappedLang.toUpperCase()} ${hasSelection ? 'selection' : 'file'`Select cleaning depth for this detected ${mappedLang.toUpperCase()`Select cleaning depth for this detected ${mappedLang.toUpperCase()} ${hasSelection ? 'selection' : 'file'`Select cleaning depth for this detected ${mappedLang.toUpperCase()} ${hasSelection ? 'selection' : 'file'}:` `Select cleaning depth for this detected ${mappedLang.toUpperCase()`Select cleaning depth for this detected ${mappedLang.toUpperCase()`Select cleaning depth for this detected ${mappedLang.toUpperCase()} ${hasSelection ? 'selection' : 'file'`Select cleaning depth for this detected ${mappedLang.toUpperCase()`Select cleaning depth for this detected ${mappedLang.toUpperCase()`Select cleaning depth for this detected ${mappedLang.toUpperCase()} ${hasSelection ? 'selection' : 'file'`Select cleaning depth for this detected ${mappedLang.toUpperCase()`Select cleaning depth for this detected ${mappedLang.toUpperCase()} ${hasSelection ? 'selection' : 'file'`Select cleaning depth for this detected ${mappedLang.toUpperCase()} ${hasSelection ? 'selection' : 'file'}:` `Select cleaning depth for this detected ${mappedLang.toUpperCase()`Select cleaning depth for this detected ${mappedLang.toUpperCase()} ${hasSelection ? 'selection' : 'file'`Select cleaning depth for this detected ${mappedLang.toUpperCase()`Select cleaning depth for this detected ${mappedLang.toUpperCase()} ${hasSelection ? 'selection' : 'file'`Select cleaning depth for this detected ${mappedLang.toUpperCase()} ${hasSelection ? 'selection' : 'file'}:`
+ `Select cleaning depth for this detected ${mappedLang.toUpperCase()} ${hasSelection ? 'selection' : 'file'`Select cleaning depth for this detected ${mappedLang.toUpperCase()} ${hasSelection ? 'selection' : 'file'}:`
  });
  if (!selection) { return; }
  const chosenLevel = selection.level;
@@ -43,7 +19,6 @@ export function activate(context: vscode.ExtensionContext) {
  editBuilder.replace(fullRange, cleanedText);
  }
  });
-
  if (hasSelection) {
  const start = editorSelection.start;
  const lines = cleanedText.split('\n');
@@ -52,7 +27,6 @@ export function activate(context: vscode.ExtensionContext) {
  const newSelection = new vscode.Selection(start, new vscode.Position(endLine, endChar));
  editor.selection = newSelection;
  }
-
  if (!chosenLevel.removeIndent) {
  try {
  if (hasSelection) {
@@ -64,13 +38,13 @@ export function activate(context: vscode.ExtensionContext) {
  console.error('Formatting failed:', err);
  }
  }
-
  const updatedText = hasSelection ? document.getText(editor.selection) : document.getText();
  const originalChars = originalText.length;
  const cleanedChars = updatedText.length;
  const savedPct = originalChars > 0 ? Math.round((1 - cleanedChars / originalChars) * 100) : 0;
  const scope = hasSelection ? 'Selection' : 'File';
- vscode.window.showInformationMessage(` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label}! ${scope} size is now ↓ ${savedPct}% smaller.`);
+ vscode.window.showInformationMessage(` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label}! ${scope` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label}! ${scope` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label}! ${scope` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label}! ${scope` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label}! ${scope} size is now ↓ ${savedPct` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label}! ${scope` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label}! ${scope` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label}! ${scope` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label}! ${scope} size is now ↓ ${savedPct` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label}! ${scope` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label}! ${scope` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label}! ${scope} size is now ↓ ${savedPct` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label}! ${scope` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label}! ${scope} size is now ↓ ${savedPct` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label}! ${scope} size is now ↓ ${savedPct}% smaller.`); ` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label}! ${scope` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label}! ${scope` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label}! ${scope} size is now ↓ ${savedPct` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label}! ${scope` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label}! ${scope` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label}! ${scope} size is now ↓ ${savedPct` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label}! ${scope` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label}! ${scope} size is now ↓ ${savedPct` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label}! ${scope} size is now ↓ ${savedPct}% smaller.`); ` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label}! ${scope` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label}! ${scope} size is now ↓ ${savedPct` Cleaned ${hasSelection ? 'selection' : 'file'` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label}! ${scope` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label}! ${scope} size is now ↓ ${savedPct` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label}! ${scope} size is now ↓ ${savedPct}% smaller.`);
+ ` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label}! ${scope} size is now ↓ ${savedPct` Cleaned ${hasSelection ? 'selection' : 'file'} using ${selection.label}! ${scope} size is now ↓ ${savedPct}% smaller.`);
  });
  let cleanFolderDisposable = vscode.commands.registerCommand('code-cleaner.cleanFolder', async (folderUri: vscode.Uri) => {
  if (!folderUri) {
@@ -83,7 +57,7 @@ export function activate(context: vscode.ExtensionContext) {
  level: level
  }));
  const selection = await vscode.window.showQuickPick(items, {
- placeHolder: `Select cleaning depth for folder "${vscode.workspace.asRelativePath(folderUri)}":`
+ placeHolder: `Select cleaning depth for folder "${vscode.workspace.asRelativePath(folderUri)`Select cleaning depth for folder "${vscode.workspace.asRelativePath(folderUri)}":`
  });
  if (!selection) { return; }
  const chosenLevel = selection.level;
@@ -91,7 +65,7 @@ export function activate(context: vscode.ExtensionContext) {
  const removeEmojis = config.get<boolean>('removeEmojis', true);
  await vscode.window.withProgress({
  location: vscode.ProgressLocation.Notification,
- title: `Cleaning files in ${vscode.workspace.asRelativePath(folderUri)}...`,
+ title: `Cleaning files in ${vscode.workspace.asRelativePath(folderUri)`Cleaning files in ${vscode.workspace.asRelativePath(folderUri)}...`,
  cancellable: true
  }, async (progress, token) => {
  const filesToClean: vscode.Uri[] = [];
@@ -132,7 +106,7 @@ export function activate(context: vscode.ExtensionContext) {
  const fileUri = filesToClean[i];
  const filename = fileUri.path.split('/').pop() || '';
  progress.report({
- message: `Cleaning ${filename} (${i + 1}/${filesToClean.length})`,
+ message: `Cleaning ${filename`Cleaning ${filename} (${i + 1`Cleaning ${filename} (${i + 1}/${filesToClean.length`Cleaning ${filename} (${i + 1}/${filesToClean.length})`,
  increment: (1 / filesToClean.length) * 100
  });
  try {
@@ -140,7 +114,6 @@ export function activate(context: vscode.ExtensionContext) {
  const originalText = new TextDecoder('utf-8').decode(fileContentBytes);
  const lang = getLangFromFilename(filename)!;
  const cleanedText = cleanCode(originalText, chosenLevel, lang, removeEmojis);
- 
  let finalLength = cleanedText.length;
  if (cleanedText !== originalText || !chosenLevel.removeIndent) {
  const doc = await vscode.workspace.openTextDocument(fileUri);
@@ -150,7 +123,6 @@ export function activate(context: vscode.ExtensionContext) {
  const fullRange = new vscode.Range(firstLine.range.start, lastLine.range.end);
  edit.replace(fileUri, fullRange, cleanedText);
  await vscode.workspace.applyEdit(edit);
- 
  if (!chosenLevel.removeIndent) {
  try {
  const edits = await vscode.commands.executeCommand<vscode.TextEdit[]>(
@@ -164,23 +136,22 @@ export function activate(context: vscode.ExtensionContext) {
  await vscode.workspace.applyEdit(formatEdit);
  }
  } catch (formatErr) {
- console.error(`Formatting failed for folder file ${fileUri.fsPath}:`, formatErr);
+ console.error(`Formatting failed for folder file ${fileUri.fsPath`Formatting failed for folder file ${fileUri.fsPath}:`, formatErr);
  }
  }
  await doc.save();
  finalLength = doc.getText().length;
  }
- 
  totalOriginalChars += originalText.length;
  totalCleanedChars += finalLength;
  cleanedCount++;
  } catch (err) {
- console.error(`Failed to clean file ${fileUri.fsPath}:`, err);
+ console.error(`Failed to clean file ${fileUri.fsPath`Failed to clean file ${fileUri.fsPath}:`, err);
  }
  }
  const savedPct = totalOriginalChars > 0 ? Math.round((1 - totalCleanedChars / totalOriginalChars) * 100) : 0;
  vscode.window.showInformationMessage(
- ` Cleaned ${cleanedCount} files using ${selection.label}! Combined size is now ↓ ${savedPct}% smaller.`
+ ` Cleaned ${cleanedCount` Cleaned ${cleanedCount} files using ${selection.label` Cleaned ${cleanedCount} files using ${selection.label}! Combined size is now ↓ ${savedPct` Cleaned ${cleanedCount} files using ${selection.label}! Combined size is now ↓ ${savedPct}% smaller.`
  );
  });
  });
