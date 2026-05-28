@@ -2,7 +2,7 @@
   "name": "code-cleaner-by-siddarthsbalaji",
   "displayName": "CodeCleaner",
   "description": "An intelligent, zero-configuration, language-aware extension to clean, compact, and minify your source code directly inside VS Code. ",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "SiddarthSBalaji",
   "engines": {
     "vscode": "^1.120.0"
