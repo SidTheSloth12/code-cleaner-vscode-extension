@@ -1,0 +1,48 @@
+{
+  "name": "code-cleaner-by-siddarthsbalaji",
+  "displayName": "CodeCleaner",
+  "description": "Minifies and cleans up code within the editor.",
+  "version": "2.0.1",
+  "publisher": "SiddarthSBalaji",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SidTheSloth12/code-cleaner-vscode-extension.git"
+  },
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Formatters",
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "code-cleaner.cleanCode",
+        "title": "Clean & Minify Code"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "code-cleaner.cleanCode",
+          "group": "modification"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.80.0",
+    "@types/node": "18.x",
+    "typescript": "^5.1.3"
+  }
+}
