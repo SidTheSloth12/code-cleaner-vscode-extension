@@ -2,7 +2,7 @@
   "name": "code-cleaner-by-siddarthsbalaji",
   "displayName": "CodeCleaner",
   "description": "Minifies and cleans up code within the editor.",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "publisher": "SiddarthSBalaji",
   "repository": {
     "type": "git",
@@ -18,6 +18,21 @@
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
+    "configuration": {
+      "title": "CodeCleaner",
+      "properties": {
+        "codeCleaner.keepComments": {
+          "type": "boolean",
+          "default": false,
+          "description": "If enabled, comments will not be removed when cleaning code."
+        },
+        "codeCleaner.cleanOnSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "If enabled, code will be automatically cleaned when the file is saved."
+        }
+      }
+    },
     "commands": [
       {
         "command": "code-cleaner.cleanCode",
@@ -41,8 +56,13 @@
     "lint": "eslint src --ext ts"
   },
   "devDependencies": {
-    "@types/vscode": "^1.80.0",
+    "@types/emscripten": "^1.41.5",
     "@types/node": "18.x",
+    "@types/vscode": "^1.80.0",
     "typescript": "^5.1.3"
+  },
+  "dependencies": {
+    "tree-sitter-wasms": "^0.1.13",
+    "web-tree-sitter": "^0.26.9"
   }
 }

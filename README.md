@@ -1,4 +1,4 @@
-# Code Lean & Clean
+# CodeCleaner
 
 **CodeCleaner** is a fast, efficient, and lightweight Visual Studio Code extension that minifies and cleans up code directly within the editor. 
 
