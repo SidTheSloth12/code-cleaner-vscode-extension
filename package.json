@@ -2,7 +2,7 @@
   "name": "code-cleaner-by-siddarthsbalaji",
   "displayName": "CodeCleaner",
   "description": "Minifies and cleans up code within the editor.",
-  "version": "2.0.2",
+  "version": "2.0.4",
   "publisher": "SiddarthSBalaji",
   "repository": {
     "type": "git",
@@ -21,10 +21,25 @@
     "configuration": {
       "title": "CodeCleaner",
       "properties": {
-        "codeCleaner.keepComments": {
+        "codeCleaner.removeComments": {
           "type": "boolean",
-          "default": false,
-          "description": "If enabled, comments will not be removed when cleaning code."
+          "default": true,
+          "description": "If enabled, comments will be removed when cleaning code."
+        },
+        "codeCleaner.removeBlankLines": {
+          "type": "boolean",
+          "default": true,
+          "description": "If enabled, blank lines will be removed."
+        },
+        "codeCleaner.removeSpacesAroundOperators": {
+          "type": "boolean",
+          "default": true,
+          "description": "If enabled, spaces around operators will be removed."
+        },
+        "codeCleaner.removeIndentation": {
+          "type": "boolean",
+          "default": true,
+          "description": "If enabled, indentation will be removed."
         },
         "codeCleaner.cleanOnSave": {
           "type": "boolean",
@@ -37,12 +52,20 @@
       {
         "command": "code-cleaner.cleanCode",
         "title": "Clean & Minify Code"
+      },
+      {
+        "command": "code-cleaner.cleanAndCopy",
+        "title": "CodeCleaner: Clean and Copy to Clipboard"
       }
     ],
     "menus": {
       "editor/context": [
         {
           "command": "code-cleaner.cleanCode",
+          "group": "modification"
+        },
+        {
+          "command": "code-cleaner.cleanAndCopy",
           "group": "modification"
         }
       ]

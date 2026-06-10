@@ -3,6 +3,23 @@ const Parser = require('web-tree-sitter');
 import type { Node, Language } from 'web-tree-sitter';
 import * as path from 'path';
 
+export interface CleanOptions {
+    removeComments: boolean;
+    removeBlankLines: boolean;
+    removeSpacesAroundOperators: boolean;
+    removeIndentation: boolean;
+}
+
+export function getCleanOptions(): CleanOptions {
+    const config = vscode.workspace.getConfiguration('codeCleaner');
+    return {
+        removeComments: config.get<boolean>('removeComments', true),
+        removeBlankLines: config.get<boolean>('removeBlankLines', true),
+        removeSpacesAroundOperators: config.get<boolean>('removeSpacesAroundOperators', true),
+        removeIndentation: config.get<boolean>('removeIndentation', true),
+    };
+}
+
 export function activate(context: vscode.ExtensionContext) {
     let disposable = vscode.commands.registerCommand('code-cleaner.cleanCode', () => {
         const editor = vscode.window.activeTextEditor;
@@ -28,13 +45,12 @@ export function activate(context: vscode.ExtensionContext) {
             textToProcess = document.getText();
         }
 
-        const config = vscode.workspace.getConfiguration('codeCleaner');
-        const keepComments = config.get<boolean>('keepComments', false);
+        const options = getCleanOptions();
 
         // Since processCode is now async, we must wrap it in an async IIFE or make the command callback async
         (async () => {
             try {
-                const cleanedText = await processCode(textToProcess, languageId, keepComments);
+                const cleanedText = await processCode(textToProcess, languageId, options);
 
                 await editor.edit(editBuilder => {
                     editBuilder.replace(rangeToReplace, cleanedText);
@@ -46,7 +62,37 @@ export function activate(context: vscode.ExtensionContext) {
         })();
     });
 
+    let copyDisposable = vscode.commands.registerCommand('code-cleaner.cleanAndCopy', async () => {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            vscode.window.showErrorMessage('No active editor found.');
+            return;
+        }
+
+        const document = editor.document;
+        const languageId = document.languageId;
+        const selection = editor.selection;
+
+        let textToProcess: string;
+        if (!selection.isEmpty) {
+            textToProcess = document.getText(new vscode.Range(selection.start, selection.end));
+        } else {
+            textToProcess = document.getText();
+        }
+
+        const options = getCleanOptions();
+
+        try {
+            const cleanedText = await processCode(textToProcess, languageId, options);
+            await vscode.env.clipboard.writeText(cleanedText);
+            vscode.window.showInformationMessage('Cleaned code copied to clipboard!');
+        } catch (err: any) {
+            vscode.window.showErrorMessage('Failed to clean and copy code: ' + err.message);
+        }
+    });
+
     context.subscriptions.push(disposable);
+    context.subscriptions.push(copyDisposable);
 
     // Phase 2: Clean on Save functionality
     context.subscriptions.push(
@@ -54,11 +100,11 @@ export function activate(context: vscode.ExtensionContext) {
             const config = vscode.workspace.getConfiguration('codeCleaner');
             if (config.get<boolean>('cleanOnSave', false)) {
                 const document = event.document;
-                const keepComments = config.get<boolean>('keepComments', false);
+                const options = getCleanOptions();
                 const textToProcess = document.getText();
                 const languageId = document.languageId;
                 
-                const cleanedTextPromise = processCode(textToProcess, languageId, keepComments);
+                const cleanedTextPromise = processCode(textToProcess, languageId, options);
                 
                 event.waitUntil((async () => {
                     try {
@@ -144,13 +190,13 @@ function getProtectedRanges(node: Node): RangeInfo[] {
     return ranges.sort((a, b) => a.start - b.start);
 }
 
-function applyWhitespaceCompression(code: string, isWhitespaceDependent: boolean, disableOperatorTightening: boolean): string {
-    if (!isWhitespaceDependent) {
+function applyWhitespaceCompression(code: string, isWhitespaceDependent: boolean, disableOperatorTightening: boolean, options: CleanOptions): string {
+    if (!isWhitespaceDependent && options.removeIndentation) {
         code = code.replace(/^[ \t]+/gm, '');
     }
     code = code.replace(/[ \t]+$/gm, '');
     code = code.replace(/(?<=\S)[ \t]{2,}/g, ' ');
-    if (!disableOperatorTightening) {
+    if (!disableOperatorTightening && options.removeSpacesAroundOperators) {
         const operators = ['\\+=', '-=', '\\*=', '/=', '===', '!==', '==', '!=', '<=', '>=', '&&', '\\|\\|', '\\+', '-', '\\*', '/', '=', '<', '>'];
         const opsPattern = operators.join('|');
         const opRegex = new RegExp(`(?<=\\S)[ \\t]*(${opsPattern})[ \\t]*(?=\\S)`, 'g');
@@ -159,14 +205,20 @@ function applyWhitespaceCompression(code: string, isWhitespaceDependent: boolean
     return code;
 }
 
-export async function processCode(text: string, languageId: string, keepComments: boolean = false): Promise<string> {
+export async function processCode(text: string, languageId: string, options: CleanOptions): Promise<string> {
+    if (['javascript', 'typescript', 'javascriptreact', 'typescriptreact'].includes(languageId)) {
+        if (options.removeBlankLines || options.removeIndentation) {
+            text = text.replace(/([a-zA-Z0-9)\]])[ \t]*(\r?\n)[ \t]*([a-zA-Z$_])/g, '$1;$2$3');
+        }
+    }
+
     const isWhitespaceDependent = ['python', 'yaml', 'fsharp', 'haskell', 'jade', 'pug', 'slim', 'stylus', 'sass'].includes(languageId);
     const disableOperatorTightening = ['shellscript', 'bash', 'sh', 'yaml', 'powershell', 'makefile'].includes(languageId);
     
     const p = await getParserForLanguage(languageId);
     if (!p) {
         // Fallback to legacy regex tokenizer logic if WASM is not found for language
-        return processCodeLegacy(text, languageId, keepComments);
+        return processCodeLegacy(text, languageId, options);
     }
 
     const tree = p.parse(text);
@@ -179,11 +231,11 @@ export async function processCode(text: string, languageId: string, keepComments
     for (const range of ranges) {
         if (range.start > lastIndex) {
             let codePart = text.substring(lastIndex, range.start);
-            result += applyWhitespaceCompression(codePart, isWhitespaceDependent, disableOperatorTightening);
+            result += applyWhitespaceCompression(codePart, isWhitespaceDependent, disableOperatorTightening, options);
         }
         
         if (range.type === 'comment') {
-            if (keepComments) result += text.substring(range.start, range.end);
+            if (!options.removeComments) result += text.substring(range.start, range.end);
         } else if (range.type === 'protect') {
             result += text.substring(range.start, range.end);
         }
@@ -193,10 +245,12 @@ export async function processCode(text: string, languageId: string, keepComments
     
     if (lastIndex < text.length) {
         let codePart = text.substring(lastIndex);
-        result += applyWhitespaceCompression(codePart, isWhitespaceDependent, disableOperatorTightening);
+        result += applyWhitespaceCompression(codePart, isWhitespaceDependent, disableOperatorTightening, options);
     }
 
-    result = result.replace(/^[ \t]*(\r?\n)/gm, '');
+    if (options.removeBlankLines) {
+        result = result.replace(/^[ \t]*(\r?\n)/gm, '');
+    }
     
     // Syntax Validation Dry-Run
     const cleanedTree = p.parse(result);
@@ -414,7 +468,7 @@ function tokenize(code: string, languageId: string): Token[] {
     return tokens;
 }
 
-function processCodeLegacy(text: string, languageId: string, keepComments: boolean = false): string {
+function processCodeLegacy(text: string, languageId: string, options: CleanOptions): string {
     const isWhitespaceDependent = ['python', 'yaml', 'fsharp', 'haskell', 'jade', 'pug', 'slim', 'stylus', 'sass'].includes(languageId);
     const disableOperatorTightening = ['shellscript', 'bash', 'sh', 'yaml', 'powershell', 'makefile'].includes(languageId);
     
@@ -424,7 +478,7 @@ function processCodeLegacy(text: string, languageId: string, keepComments: boole
     
     for (const token of tokens) {
         if (token.type === 'comment') {
-            if (!keepComments) {
+            if (options.removeComments) {
                 // 1. Remove Comments
                 continue;
             } else {
@@ -447,7 +501,7 @@ function processCodeLegacy(text: string, languageId: string, keepComments: boole
         if (token.type === 'code') {
             let code = token.value;
             
-            if (!isWhitespaceDependent) {
+            if (!isWhitespaceDependent && options.removeIndentation) {
                 // 5. Conditional Indentation Removal (Flatten if not whitespace dependent)
                 code = code.replace(/^[ \t]+/gm, '');
             }
@@ -459,7 +513,7 @@ function processCodeLegacy(text: string, languageId: string, keepComments: boole
             // Using (?<=\S) avoids matching leading indentation
             code = code.replace(/(?<=\S)[ \t]{2,}/g, ' ');
             
-            if (!disableOperatorTightening) {
+            if (!disableOperatorTightening && options.removeSpacesAroundOperators) {
                 // 4. Tighten Operators
                 // Avoid modifying start/end of lines to prevent breaking syntax like YAML lists
                 const operators = [
@@ -476,7 +530,9 @@ function processCodeLegacy(text: string, languageId: string, keepComments: boole
     
     // 2. Remove Blank Lines
     // Remove lines that only contain whitespace characters
-    result = result.replace(/^[ \t]*(\r?\n)/gm, '');
+    if (options.removeBlankLines) {
+        result = result.replace(/^[ \t]*(\r?\n)/gm, '');
+    }
     
     // Restore protected tokens efficiently O(N) instead of O(N*M)
     result = result.replace(/__PROTECTED_TOKEN_(\d+)__/g, (match, index) => {
