@@ -2,8 +2,9 @@
   "name": "code-cleaner-by-siddarthsbalaji",
   "displayName": "CodeCleaner",
   "description": "Minifies, cleans up, and refactors code within the editor.",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "publisher": "SiddarthSBalaji",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/SidTheSloth12/code-cleaner-vscode-extension.git"

@@ -25,3 +25,5 @@ It intelligently trims trailing whitespaces, removes consecutive spaces, removes
 ## Supported Languages
 Fully tested and configured for Javascript, Typescript, Python, Ruby, C, C++, C#, Java, Rust, Go, PHP, Kotlin, Swift, HTML, CSS, SCSS, JSON, Bash, Shell, PowerShell, YAML, Lua, SQL, Haskell, and more!
 
+## License
+MIT
