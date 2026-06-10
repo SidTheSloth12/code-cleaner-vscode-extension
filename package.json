@@ -2,7 +2,7 @@
   "name": "code-cleaner-by-siddarthsbalaji",
   "displayName": "CodeCleaner",
   "description": "Minifies, cleans up, and refactors code within the editor.",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "publisher": "SiddarthSBalaji",
   "repository": {
     "type": "git",
@@ -75,15 +75,15 @@
     "commands": [
       {
         "command": "code-cleaner.cleanCode",
-        "title": "CodeCleaner: Clean & Minify Code"
+        "title": "CodeCleaner: Clean"
       },
       {
         "command": "code-cleaner.cleanAndCopy",
-        "title": "CodeCleaner: Clean and Copy to Clipboard"
+        "title": "CodeCleaner: Clean & Copy"
       },
       {
         "command": "code-cleaner.aiCleanCode",
-        "title": "CodeCleaner: AI Clean & Refactor"
+        "title": "CodeCleaner: AI Refactor"
       }
     ],
     "menus": {

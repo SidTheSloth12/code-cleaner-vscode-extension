@@ -35,7 +35,7 @@ export function registerCommands(context: vscode.ExtensionContext) {
             await editor.edit(editBuilder => {
                 editBuilder.replace(rangeToReplace, cleanedText);
             });
-            vscode.window.showInformationMessage('CodeLean & Clean applied successfully!');
+            vscode.window.showInformationMessage('Code cleaned.');
         } catch (err: any) {
             vscode.window.showErrorMessage('Failed to apply code cleaner: ' + err.message);
         }
@@ -64,7 +64,7 @@ export function registerCommands(context: vscode.ExtensionContext) {
         try {
             const cleanedText = await processCode(textToProcess, languageId, options);
             await vscode.env.clipboard.writeText(cleanedText);
-            vscode.window.showInformationMessage('Cleaned code copied to clipboard!');
+            vscode.window.showInformationMessage('Code cleaned and copied.');
         } catch (err: any) {
             vscode.window.showErrorMessage('Failed to clean and copy code: ' + err.message);
         }
@@ -107,7 +107,7 @@ export function registerCommands(context: vscode.ExtensionContext) {
                 await editor.edit(editBuilder => {
                     editBuilder.replace(rangeToReplace, cleanedText);
                 });
-                vscode.window.showInformationMessage('AI Code Refactor applied successfully!');
+                vscode.window.showInformationMessage('AI Refactor applied.');
             });
         } catch (err: any) {
             vscode.window.showErrorMessage('Failed to apply AI code refactor: ' + err.message);
