@@ -24,7 +24,10 @@ export async function getParserForLanguage(languageId: string): Promise<Parser |
     if (!languageCache.has(wasmName)) {
         try {
             // In esbuild bundled environment, wasms will be next to the extension script
-            const wasmPath = path.join(__dirname, `tree-sitter-${wasmName}.wasm`);
+            let wasmPath = path.join(__dirname, `tree-sitter-${wasmName}.wasm`);
+            if (!require('fs').existsSync(wasmPath)) {
+                wasmPath = path.join(__dirname, '..', '..', 'node_modules', 'tree-sitter-wasms', 'out', `tree-sitter-${wasmName}.wasm`);
+            }
             const lang = await Parser.Language.load(wasmPath);
             languageCache.set(wasmName, lang);
         } catch (e) {

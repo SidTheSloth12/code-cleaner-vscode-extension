@@ -2,7 +2,7 @@
   "name": "code-cleaner-by-siddarthsbalaji",
   "displayName": "CodeCleaner",
   "description": "Minifies, cleans up, and refactors code within the editor.",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "publisher": "SiddarthSBalaji",
   "repository": {
     "type": "git",
