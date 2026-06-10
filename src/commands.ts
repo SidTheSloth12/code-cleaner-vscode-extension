@@ -31,9 +31,19 @@ export function registerCommands(context: vscode.ExtensionContext) {
         const options = getConfig();
 
         try {
-            const cleanedText = await processCode(textToProcess, languageId, options);
+            const leadingWhitespace = textToProcess.length === 0 ? '' : (textToProcess.match(/^\s*/) || [''])[0];
+            const isAllWhitespace = leadingWhitespace.length === textToProcess.length;
+            const trailingWhitespace = isAllWhitespace ? '' : (textToProcess.match(/\s*$/) || [''])[0];
+            const trimmedText = isAllWhitespace ? '' : textToProcess.substring(leadingWhitespace.length, textToProcess.length - trailingWhitespace.length);
+
+            let finalText = textToProcess;
+            if (!isAllWhitespace) {
+                const cleanedText = await processCode(trimmedText, languageId, options);
+                finalText = leadingWhitespace + cleanedText + trailingWhitespace;
+            }
+
             await editor.edit(editBuilder => {
-                editBuilder.replace(rangeToReplace, cleanedText);
+                editBuilder.replace(rangeToReplace, finalText);
             });
             vscode.window.showInformationMessage('Code cleaned.');
         } catch (err: any) {
@@ -62,8 +72,18 @@ export function registerCommands(context: vscode.ExtensionContext) {
         const options = getConfig();
 
         try {
-            const cleanedText = await processCode(textToProcess, languageId, options);
-            await vscode.env.clipboard.writeText(cleanedText);
+            const leadingWhitespace = textToProcess.length === 0 ? '' : (textToProcess.match(/^\s*/) || [''])[0];
+            const isAllWhitespace = leadingWhitespace.length === textToProcess.length;
+            const trailingWhitespace = isAllWhitespace ? '' : (textToProcess.match(/\s*$/) || [''])[0];
+            const trimmedText = isAllWhitespace ? '' : textToProcess.substring(leadingWhitespace.length, textToProcess.length - trailingWhitespace.length);
+
+            let finalText = textToProcess;
+            if (!isAllWhitespace) {
+                const cleanedText = await processCode(trimmedText, languageId, options);
+                finalText = leadingWhitespace + cleanedText + trailingWhitespace;
+            }
+
+            await vscode.env.clipboard.writeText(finalText);
             vscode.window.showInformationMessage('Code cleaned and copied.');
         } catch (err: any) {
             vscode.window.showErrorMessage('Failed to clean and copy code: ' + err.message);
@@ -103,9 +123,20 @@ export function registerCommands(context: vscode.ExtensionContext) {
                 cancellable: false
             }, async (progress) => {
                 progress.report({ message: "AI is analyzing and refactoring code..." });
-                const cleanedText = await aiCleanCode(textToProcess, languageId, options);
+                
+                const leadingWhitespace = textToProcess.length === 0 ? '' : (textToProcess.match(/^\s*/) || [''])[0];
+                const isAllWhitespace = leadingWhitespace.length === textToProcess.length;
+                const trailingWhitespace = isAllWhitespace ? '' : (textToProcess.match(/\s*$/) || [''])[0];
+                const trimmedText = isAllWhitespace ? '' : textToProcess.substring(leadingWhitespace.length, textToProcess.length - trailingWhitespace.length);
+
+                let finalText = textToProcess;
+                if (!isAllWhitespace) {
+                    const cleanedText = await aiCleanCode(trimmedText, languageId, options);
+                    finalText = leadingWhitespace + cleanedText + trailingWhitespace;
+                }
+
                 await editor.edit(editBuilder => {
-                    editBuilder.replace(rangeToReplace, cleanedText);
+                    editBuilder.replace(rangeToReplace, finalText);
                 });
                 vscode.window.showInformationMessage('AI Refactor applied.');
             });

@@ -1,10 +1,8 @@
 const esbuild = require('esbuild');
 const fs = require('fs');
 const path = require('path');
-
 const production = process.argv.includes('--minify');
 const watch = process.argv.includes('--watch');
-
 /**
  * @type {import('esbuild').Plugin}
  */
