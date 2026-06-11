@@ -25,6 +25,13 @@ const copyWasmPlugin = {
                         );
                     }
                 }
+                
+                // Also copy the core tree-sitter.wasm
+                const coreWasmPath = path.join(__dirname, 'node_modules', 'web-tree-sitter', 'tree-sitter.wasm');
+                if (fs.existsSync(coreWasmPath)) {
+                    fs.copyFileSync(coreWasmPath, path.join(outDir, 'tree-sitter.wasm'));
+                }
+                
                 console.log('Copied WASM files to out/');
             } else {
                 console.warn('WASM source directory not found. Make sure tree-sitter-wasms is installed.');

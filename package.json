@@ -2,7 +2,7 @@
   "name": "code-cleaner-by-siddarthsbalaji",
   "displayName": "CodeCleaner",
   "description": "Minifies, cleans up, and refactors code within the editor.",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "publisher": "SiddarthSBalaji",
   "license": "MIT",
   "repository": {
@@ -16,7 +16,11 @@
     "Formatters",
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onCommand:code-cleaner.cleanCode",
+    "onCommand:code-cleaner.cleanAndCopy",
+    "onCommand:code-cleaner.aiCleanCode"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "configuration": {
