@@ -2,7 +2,7 @@
   "name": "code-cleaner-by-siddarthsbalaji",
   "displayName": "CodeCleaner",
   "description": "Minifies, cleans up, and refactors code within the editor.",
-  "version": "3.0.4",
+  "version": "3.0.7",
   "publisher": "SiddarthSBalaji",
   "license": "MIT",
   "repository": {
@@ -18,8 +18,7 @@
   ],
   "activationEvents": [
     "onCommand:code-cleaner.cleanCode",
-    "onCommand:code-cleaner.cleanAndCopy",
-    "onCommand:code-cleaner.aiCleanCode"
+    "onCommand:code-cleaner.cleanAndCopy"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -30,26 +29,14 @@
           "type": "string",
           "enum": [
             "Format",
+            "Clean",
             "Minify",
             "Obfuscate"
           ],
-          "default": "Minify",
-          "description": "Profile to use when cleaning code. 'Format' standardizes spacing. 'Minify' aggressively removes whitespace. 'Obfuscate' mangles JS/TS variables."
+          "default": "Clean",
+          "description": "Profile to use when cleaning code. 'Format' standardizes spacing. 'Clean' removes comments and unnecessary spaces. 'Minify' aggressively removes whitespace. 'Obfuscate' mangles JS/TS variables."
         },
-        "codeCleaner.aiProvider": {
-          "type": "string",
-          "enum": [
-            "Gemini",
-            "OpenAI"
-          ],
-          "default": "Gemini",
-          "description": "The AI provider to use for the AI Clean & Refactor feature."
-        },
-        "codeCleaner.apiKey": {
-          "type": "string",
-          "default": "",
-          "description": "Your API key for the selected AI provider."
-        },
+
         "codeCleaner.removeComments": {
           "type": "boolean",
           "default": true,
@@ -67,7 +54,7 @@
         },
         "codeCleaner.removeIndentation": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "description": "If enabled, indentation will be removed."
         },
         "codeCleaner.cleanOnSave": {
@@ -85,10 +72,6 @@
       {
         "command": "code-cleaner.cleanAndCopy",
         "title": "CodeCleaner: Clean & Copy"
-      },
-      {
-        "command": "code-cleaner.aiCleanCode",
-        "title": "CodeCleaner: AI Refactor"
       }
     ],
     "menus": {
@@ -99,10 +82,6 @@
         },
         {
           "command": "code-cleaner.cleanAndCopy",
-          "group": "modification"
-        },
-        {
-          "command": "code-cleaner.aiCleanCode",
           "group": "modification"
         }
       ]
@@ -134,8 +113,6 @@
   "dependencies": {
     "tree-sitter-wasms": "^0.1.13",
     "web-tree-sitter": "^0.20.8",
-    "terser": "^5.27.0",
-    "@google/genai": "latest",
-    "openai": "^4.24.1"
+    "terser": "^5.27.0"
   }
 }

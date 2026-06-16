@@ -65,11 +65,7 @@ export async function processCode(text: string, languageId: string, options: Cle
         }
     }
 
-    if (isJsTs && options.profile !== 'Format') {
-        if (options.removeBlankLines || options.removeIndentation) {
-            text = text.replace(/([a-zA-Z0-9)\]])[ \t]*(\r?\n)[ \t]*([a-zA-Z$_])/g, '$1;$2$3');
-        }
-    }
+    // Dangerous semicolon injection removed as it modifies code inside strings and changes semantics.
 
     const isWhitespaceDependent = ['python', 'yaml', 'fsharp', 'haskell', 'jade', 'pug', 'slim', 'stylus', 'sass'].includes(languageId);
     const disableOperatorTightening = ['shellscript', 'bash', 'sh', 'yaml', 'powershell', 'makefile'].includes(languageId);
