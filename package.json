@@ -2,7 +2,7 @@
   "name": "code-cleaner-by-siddarthsbalaji",
   "displayName": "CodeCleaner",
   "description": "Minifies, cleans up, and refactors code within the editor.",
-  "version": "3.0.7",
+  "version": "3.0.8",
   "publisher": "SiddarthSBalaji",
   "license": "MIT",
   "repository": {
@@ -18,7 +18,8 @@
   ],
   "activationEvents": [
     "onCommand:code-cleaner.cleanCode",
-    "onCommand:code-cleaner.cleanAndCopy"
+    "onCommand:code-cleaner.cleanAndCopy",
+    "onCommand:code-cleaner.cleanFolder"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -36,7 +37,6 @@
           "default": "Clean",
           "description": "Profile to use when cleaning code. 'Format' standardizes spacing. 'Clean' removes comments and unnecessary spaces. 'Minify' aggressively removes whitespace. 'Obfuscate' mangles JS/TS variables."
         },
-
         "codeCleaner.removeComments": {
           "type": "boolean",
           "default": true,
@@ -72,6 +72,10 @@
       {
         "command": "code-cleaner.cleanAndCopy",
         "title": "CodeCleaner: Clean & Copy"
+      },
+      {
+        "command": "code-cleaner.cleanFolder",
+        "title": "CodeCleaner: Clean folder"
       }
     ],
     "menus": {
@@ -83,6 +87,13 @@
         {
           "command": "code-cleaner.cleanAndCopy",
           "group": "modification"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "code-cleaner.cleanFolder",
+          "group": "modification",
+          "when": "explorerResourceIsFolder"
         }
       ]
     }

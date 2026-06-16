@@ -44,19 +44,24 @@ function applyWhitespaceCompression(code: string, isWhitespaceDependent: boolean
 }
 
 export async function processCode(text: string, languageId: string, options: CleanOptions): Promise<string> {
+    const effectiveOptions = { ...options };
+    if (languageId === 'json' || languageId === 'jsonc') {
+        effectiveOptions.profile = 'Format';
+    }
+
     const isJsTs = ['javascript', 'typescript', 'javascriptreact', 'typescriptreact'].includes(languageId);
 
     // Use Terser for robust JS/TS minification/obfuscation
-    if (isJsTs && (options.profile === 'Minify' || options.profile === 'Obfuscate')) {
+    if (isJsTs && (effectiveOptions.profile === 'Minify' || effectiveOptions.profile === 'Obfuscate')) {
         try {
             const result = await minify(text, {
-                mangle: options.profile === 'Obfuscate',
+                mangle: effectiveOptions.profile === 'Obfuscate',
                 compress: {
                     defaults: true,
-                    drop_console: options.profile === 'Obfuscate',
+                    drop_console: effectiveOptions.profile === 'Obfuscate',
                 },
                 format: {
-                    comments: !options.removeComments,
+                    comments: !effectiveOptions.removeComments,
                 }
             });
             if (result.code) return result.code;
@@ -72,7 +77,7 @@ export async function processCode(text: string, languageId: string, options: Cle
     
     const p = await getParserForLanguage(languageId);
     if (!p) {
-        return processCodeLegacy(text, languageId, options);
+        return processCodeLegacy(text, languageId, effectiveOptions);
     }
 
     const tree = p.parse(text);
@@ -85,11 +90,11 @@ export async function processCode(text: string, languageId: string, options: Cle
     for (const range of ranges) {
         if (range.start > lastIndex) {
             let codePart = text.substring(lastIndex, range.start);
-            result += applyWhitespaceCompression(codePart, isWhitespaceDependent, disableOperatorTightening, options);
+            result += applyWhitespaceCompression(codePart, isWhitespaceDependent, disableOperatorTightening, effectiveOptions);
         }
         
         if (range.type === 'comment') {
-            if (!options.removeComments || options.profile === 'Format') result += text.substring(range.start, range.end);
+            if (!effectiveOptions.removeComments || effectiveOptions.profile === 'Format') result += text.substring(range.start, range.end);
         } else if (range.type === 'protect') {
             result += text.substring(range.start, range.end);
         }
@@ -99,10 +104,10 @@ export async function processCode(text: string, languageId: string, options: Cle
     
     if (lastIndex < text.length) {
         let codePart = text.substring(lastIndex);
-        result += applyWhitespaceCompression(codePart, isWhitespaceDependent, disableOperatorTightening, options);
+        result += applyWhitespaceCompression(codePart, isWhitespaceDependent, disableOperatorTightening, effectiveOptions);
     }
 
-    if (options.profile !== 'Format' && options.removeBlankLines) {
+    if (effectiveOptions.profile !== 'Format' && effectiveOptions.removeBlankLines) {
         result = result.replace(/^[ \t]*(\r?\n)/gm, '');
     }
     
